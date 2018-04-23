@@ -1,4 +1,4 @@
- 4/22/2018; Brevan
+ 4-22-2018; Brevan
  -
 I have spent the last few hours pondering chunk loading techniques, both those for 1.8.9 and for later versions. We can effectively break down the loaders into two categories: connected and disconnected. Connected chunk loaders work by daisy chaining chunk loaders out from spawn chunks, and thus form continuous chains. In contrast, disconnected chunk loaders can be remote. I will evaluate a few chunk loaders I have found here, with pros and cons.
 
@@ -40,5 +40,6 @@ I have spent the last few hours pondering chunk loading techniques, both those f
 		- Seemingly reliant on diagonal
 		- So complicated I don't fully understand it yet
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0MjQyOTc5ODNdfQ==
+eyJoaXN0b3J5IjpbLTExOTk4NTc0NzEsLTE0MjQyOTc5ODNdfQ
+==
 -->
