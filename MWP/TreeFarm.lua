@@ -1,6 +1,7 @@
 local direction = 0
 while true do
     turtle.refuel()
+    turtle.suck()
     local success, data = turtle.inspect()
     if (not success) then
         turtle.forward()
