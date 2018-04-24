@@ -16,6 +16,7 @@ while true do
     local success, data = turtle.inspectUp()
     if success then
         if (data.name == "minecraft:furnace") then
+            print("furnace detected!")
             turtle.suckUp() -- pull out produced charcoal
             turtle.select(1)
             local item = turtle.getItemDetail()
@@ -24,6 +25,7 @@ while true do
                     turtle.dropUp(8) -- all that is needed
                 end
             end
+            print("back it on up")
             turtle.back()
             turtle.up()
             turtle.up()
@@ -74,6 +76,7 @@ while true do
         turtle.forward()
         turtle.down()
     elseif (data.name == "minecraft:chest") then
+        print("somehow reached a chest still")
         for i = 4, 16 do
             turtle.select(i)
             turtle.drop()
