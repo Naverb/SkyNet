@@ -44,7 +44,8 @@ while true do
             turtle.back()
             turtle.down()
             turtle.down()
-            direction = 0
+            turtle.forward()
+            turtle.forward()
         end
     end
     local success, data = turtle.inspect()
