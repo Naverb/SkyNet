@@ -83,9 +83,6 @@ while true do
         for i = 4, 16 do
             turtle.select(i)
             turtle.drop()
-            turtle.turnRight()
-            turtle.turnRight()
-            direction = 0
         end
     elseif (direction == 0) then
         turtle.turnRight()
