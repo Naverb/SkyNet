@@ -9,7 +9,7 @@ for i = 1, 16 do
     if fuel then
         if (fuel.name == "minecraft:charcoal" or fuel.name == "minecraft:coal") then
             turtle.select(1)
-            turtle.refuel(turtle.getItemCount(1)-1) -- leave something in slot
+            turtle.refuel(turtle.getItemCount(1)-9) -- leave something in slot
         end
     end
 end
@@ -44,8 +44,6 @@ while true do
             turtle.back()
             turtle.down()
             turtle.down()
-            turtle.turnRight()
-            turtle.turnRight()
             direction = 0
         end
     end
@@ -84,6 +82,9 @@ while true do
         for i = 4, 16 do
             turtle.select(i)
             turtle.drop()
+            turtle.turnRight()
+            turtle.turnRight()
+            direction = 0
         end
     elseif (direction == 0) then
         turtle.turnRight()
