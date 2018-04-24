@@ -5,12 +5,12 @@ K = vector.new(0,0,1)
 
 -- Get location of computer using rednet
 function getLocation()
-    local loc = gps.locate(5)
+    local loc = vector.new(gps.locate(5))
     if not loc then
         return true, nil
         -- We return error = true and loc = nil
     else
-        return false, vector.new(loc)
+        return false, loc
     end
 end
 
