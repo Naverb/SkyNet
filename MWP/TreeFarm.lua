@@ -3,12 +3,32 @@ local width = 18
 local height = 18
 local counter = 0
 local area = width * height 
+
+function cornerCheck()
+    if (direction == 0) then
+        turtle.turnRight()
+        if (not turtle.detect()) then
+            direction = 1
+        end
+        turtle.forward()
+        turtle.turnRight()
+    else
+        turtle.turnLeft()
+        if (not turtle.detect()) then
+            direction = 0
+        end
+        turtle.forward()
+        turtle.turnLeft()
+    end
+end
+
 for i = 1, 16 do
     turtle.select(i)
     local fuel = turtle.getItemDetail()
     if fuel then
         if (fuel.name == "minecraft:charcoal" or fuel.name == "minecraft:coal") then
-            turtle.refuel(63)
+            turtle.select(1)
+            turtle.refuel(turtle.getItemCount(1)-9) -- leave something in slot
         end
     end
 end
@@ -22,9 +42,12 @@ while true do
             local item = turtle.getItemDetail()
             if item then
                 if (item.name == "minecraft:charcoal" or item.name == "minecraft:coal") then
-                    turtle.dropUp(8) -- all that is needed
+                    if (turtle.getItemCount(1) > 8) then
+                        turtle.dropUp(8) -- all that is needed
+                    end
                 end
             end
+            turtle.refuel(turtle.getItemCount(1)-1)
             print("back it on up")
             turtle.back()
             turtle.up()
@@ -34,15 +57,14 @@ while true do
             local item = turtle.getItemDetail()
             if item then
                 if (item.name == "minecraft:log") then
-                    turtle.dropDown(63) -- leave one to reserve slot
+                    turtle.dropDown(turtle.getItemCount(3)-1) -- leave one to reserve slot
                 end
             end
             turtle.back()
             turtle.down()
             turtle.down()
-            turtle.turnRight()
-            turtle.turnRight()
-            direction = 0
+            turtle.forward()
+            turtle.forward()
         end
     end
     local success, data = turtle.inspect()
@@ -57,7 +79,7 @@ while true do
         turtle.select(2)
         local item = turtle.getItemDetail()
         if item then
-            if (item.name == "minecraft:sapling") then
+            if (item.name == "minecraft:sapling" and turtle.getItemCount(2) > 1) then
                 turtle.placeDown()
             end
         end
@@ -81,20 +103,8 @@ while true do
             turtle.select(i)
             turtle.drop()
         end
-    elseif (direction == 0) then
-        turtle.turnRight()
-        if (not turtle.detect()) then
-            direction = 1
-        end
-        turtle.forward()
-        turtle.turnRight()
-    elseif (direction == 1) then
-        turtle.turnLeft()
-        if (not turtle.detect()) then
-            direction = 0
-        end
-        turtle.forward()
-        turtle.turnLeft()
+        cornerCheck()
+    else
+        cornerCheck()
     end
-    
 end
