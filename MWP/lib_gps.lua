@@ -66,6 +66,7 @@ function getOrientation(localMode)
             turtle.turnLeft()
         end
 
+        print(loc2)
         local disp = loc2 - loc1
         -- We don't care about the vertical component
         disp.y = 0
@@ -170,7 +171,7 @@ function goto(destination, tolerance, breakBlocks)
             break
         end
 
-    until trajectory:length < tolerance
+    until trajectory:length() < tolerance
 end
 
 
