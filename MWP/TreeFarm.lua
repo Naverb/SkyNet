@@ -53,7 +53,10 @@ while true do
         turtle.digUp()
         turtle.up()
         turtle.select(2)
-        turtle.placeDown()
+        local item = turtle.getItemDetail()
+        if item then
+            turtle.placeDown()
+        end
         while(turtle.detectUp()) do
             turtle.digUp()
             turtle.up()
