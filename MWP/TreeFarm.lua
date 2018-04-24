@@ -55,7 +55,9 @@ while true do
         turtle.select(2)
         local item = turtle.getItemDetail()
         if item then
-            turtle.placeDown()
+            if (item.name == "minecraft:sapling") then
+                turtle.placeDown()
+            end
         end
         while(turtle.detectUp()) do
             turtle.digUp()
