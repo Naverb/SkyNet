@@ -27,42 +27,32 @@ function getOrientation(localMode)
         -- Now we'll move the turtle
 
         local delta_y = 0
-        local rotationCount = 0
         local loc2_ready = false
         -- We need to move the turtle to get a displacement vector to calculate orientation
         -- so we need to make sure that the turtle can move forward
 
         repeat
-            repeat
-                if turtle.forward() then
-                    loc2_ready = true
-                    rotationCount = 0
+            if turtle.forward() then
+                loc2_ready = true
+            else
+                if turtle.up() then
+                    delta_y = delta_y + 1
                 else 
-                    turtle.turnRight()
-                    rotationCount = (rotationCount + 1) % 4
-                end
-            until rotationCount < 1
-
-            if not loc2_ready then
-                rotationCount = rotationCount % 4
-                if not turtle.up() then
                     if turtle.digUp() then
-                        if turtle.up() then
-                            delta_y = delta_y + 1
-                        end
+                        turtle.up()
+                        delta_y = delta_y + 1
                     else
                         loc2_ready = true
-                        -- We failed to move the turtle, so we give up.
-                    end
-                else
-                    delta_y = delta_y + 1
-                    -- The turtle moved up one block, so let's keep track of that.
+                        -- We failed to find an opening to get orientation. Let's abort
+                        -- At this point, if we want to improve the gps code, we'd tell the robot to return to
+                        -- it's original position, then have it mine the block in front of it to create an opening.
+                        -- We'd want to check to see if the block in front is valuable however...
                 end
             end
         until loc2_ready
 
         if loc2_ready then
-            err loc2 = getLocation()
+            err, loc2 = getLocation()
         else
             loc2 = loc1
             -- Something weird happened, let's abort.
@@ -74,18 +64,15 @@ function getOrientation(localMode)
             turtle.down()
         end
 
-        -- Now rotate back to original position
-        for i=1,rotationCount,1 do
-            turtle.turnLeft()
-        end
-
-        print(loc2)
         local disp = loc2 - loc1
         -- We don't care about the vertical component
         disp.y = 0
 
+        print(disp)
         return disp
     else 
+        -- This is localMode == true
+        print(local_orientation)
         return local_orientation
     end
 end
