@@ -1,8 +1,8 @@
 for i = 1, 16 do
     turtle.select(i)
-    local data = turtle.getItemDetail()
-    if data then
-        if (data.name ~= "minecraft:sapling") then
+    local fuel = turtle.getItemDetail()
+    if fuel then
+        if (fuel.name ~= "minecraft:sapling") then
             turtle.refuel()
         end
     end
