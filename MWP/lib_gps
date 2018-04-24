@@ -100,7 +100,7 @@ function orientTurtle(direction, localMode)
             turtle.turnRight()
             -- Rotate the orientation vector π/2 radians in xz plane.
             local x_prime = local_orientation.z
-            local z_prime = -1 * local_orientation.x
+            local z_prime = local_orientation.x
 
             local_orientation.x = x_prime
             local_orientation.z = z_prime
