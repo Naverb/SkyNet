@@ -33,6 +33,7 @@ for i = 1, 16 do
     end
 end
 while true do
+    print(turtle.getFuelLevel())
     local success, data = turtle.inspectUp()
     if success then
         if (data.name == "minecraft:furnace" or data.name == "minecraft:lit_furnace") then
