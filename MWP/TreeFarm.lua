@@ -3,6 +3,25 @@ local width = 18
 local height = 18
 local counter = 0
 local area = width * height 
+
+function cornerCheck()
+    if (direction == 0) then
+        turtle.turnRight()
+        if (not turtle.detect()) then
+            direction = 1
+        end
+        turtle.forward()
+        turtle.turnRight()
+    if (direction == 1) then
+        turtle.turnLeft()
+        if (not turtle.detect()) then
+            direction = 0
+        end
+        turtle.forward()
+        turtle.turnLeft()
+    end
+end
+
 for i = 1, 16 do
     turtle.select(i)
     local fuel = turtle.getItemDetail()
@@ -84,20 +103,8 @@ while true do
             turtle.select(i)
             turtle.drop()
         end
-    elseif (direction == 0) then
-        turtle.turnRight()
-        if (not turtle.detect()) then
-            direction = 1
-        end
-        turtle.forward()
-        turtle.turnRight()
-    elseif (direction == 1) then
-        turtle.turnLeft()
-        if (not turtle.detect()) then
-            direction = 0
-        end
-        turtle.forward()
-        turtle.turnLeft()
+        cornerCheck()
+    else
+        cornerCheck()
     end
-    
 end
