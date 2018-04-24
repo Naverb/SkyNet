@@ -49,7 +49,7 @@ while true do
         turtle.forward()
     elseif (data.name == "minecraft:log") then
         turtle.dig()
-        turle.forward()
+        turtle.forward()
         turtle.digUp()
         turtle.up()
         turtle.select(2)
