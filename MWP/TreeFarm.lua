@@ -12,7 +12,7 @@ function cornerCheck()
         end
         turtle.forward()
         turtle.turnRight()
-    if (direction == 1) then
+    else
         turtle.turnLeft()
         if (not turtle.detect()) then
             direction = 0
