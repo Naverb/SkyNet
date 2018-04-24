@@ -1,12 +1,4 @@
-for i = 1, 16 do
-    turtle.select(i)
-    local fuel = turtle.getItemDetail()
-    if fuel then
-        if (fuel.name ~= "minecraft:sapling") then
-            turtle.refuel()
-        end
-    end
-end
+turtle.refuel()
 while true do
     turtle.suck()
     local success, data = turtle.inspect()
