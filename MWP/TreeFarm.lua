@@ -1,8 +1,8 @@
-local direction = 0
 local data
 for i = 1, 16 do
     turtle.select(i)
-    if (turtle.getItemDetail().name ~= "minecraft:sapling") then
+    local data = turtle.getItemDetail()
+    if (data.name ~= "minecraft:sapling") then
         turtle.refuel()
     end
   end
