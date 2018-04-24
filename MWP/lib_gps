@@ -98,6 +98,13 @@ function orientTurtle(direction, localMode)
     if localMode then
         repeat
             turtle.turnRight()
+            -- Rotate the orientation vector π/2 radians in xz plane.
+            local x_prime = local_orientation.z
+            local z_prime = -1 * local_orientation.x
+
+            local_orientation.x = x_prime
+            local_orientation.z = z_prime
+
         until direction:dot(local_orientation) > 0
     else
         repeat
