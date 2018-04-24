@@ -39,6 +39,9 @@ while true do
             turtle.back()
             turtle.down()
             turtle.down()
+            turtle.turnRight()
+            turtle.turnRight()
+            direction = 0
         end
     end
     local success, data = turtle.inspect()
