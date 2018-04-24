@@ -13,7 +13,6 @@ for i = 1, 16 do
     end
 end
 while true do
-    turtle.suck()
     local success, data = turtle.inspectUp()
     if success then
         if (data.name == "minecraft:furnace") then
@@ -46,6 +45,7 @@ while true do
     end
     local success, data = turtle.inspect()
     if (not success) then
+        turtle.suck()
         turtle.forward()
     elseif (data.name == "minecraft:log") then
         turtle.dig()
