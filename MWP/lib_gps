@@ -133,6 +133,7 @@ function traverseTrajectory(trajectory, breakBlocks)
         if not turtle.forward() then
             if breakBlocks then
                 turtle.dig()
+                turtle.forward()
             end
         end
     end
@@ -143,6 +144,7 @@ function traverseTrajectory(trajectory, breakBlocks)
         if not turtle.forward() then
             if breakBlocks then
                 turtle.dig()
+                turtle.forward()
             end
         end
     end
@@ -153,6 +155,7 @@ function traverseTrajectory(trajectory, breakBlocks)
             if not turtle.up() then
                 if breakBlocks then
                     turtle.digUp()
+                    turtle.up()
                 end
             end
         end
@@ -161,6 +164,7 @@ function traverseTrajectory(trajectory, breakBlocks)
             if not turtle.down() then
                 if breakBlocks then
                     turtle.digDown()
+                    turtle.down()
                 end
             end
         end
