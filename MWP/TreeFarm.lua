@@ -40,6 +40,7 @@ while true do
             print("furnace detected!")
             turtle.select(1)
             turtle.suckUp() -- pull out produced charcoal
+            turtle.refuel(turtle.getItemCount(1) - 9)
             local item = turtle.getItemDetail()
             if item then
                 if (item.name == "minecraft:charcoal" or item.name == "minecraft:coal") then
@@ -48,7 +49,6 @@ while true do
                     end
                 end
             end
-            turtle.refuel(turtle.getItemCount(1)/3)
             print("back it on up")
             turtle.back()
             turtle.up()
