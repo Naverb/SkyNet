@@ -28,11 +28,14 @@ function getOrientation(localMode)
 
         local delta_y = 0
         local rotationCount = 0
+        local loc2_ready = false
+        -- We need to move the turtle to get a displacement vector to calculate orientation
+        -- so we need to make sure that the turtle can move forward
 
         repeat
             repeat
                 if turtle.forward() then
-                    local err, loc2 = getLocation()
+                    loc2_ready = true
                     rotationCount = 0
                 else 
                     turtle.turnRight()
@@ -40,21 +43,27 @@ function getOrientation(localMode)
                 end
             until rotationCount < 1
             print(loc2)
-            if loc2 == nil then
+            if not loc2_ready then
                 rotationCount = 0
                 if not turtle.up() then
                     if turtle.digUp() then
                         turtle.up()
                     else
-                        loc2 = loc1
-                        -- We failed to move the turtle, so we give up and let
-                        -- loc2 = loc1 so the function can terminate.
+                        loc2_ready = true
+                        -- We failed to move the turtle, so we give up.
                     end
                 end
 
                 delta_y = delta_y + 1
             end
-        until loc2 ~= nil
+        until loc2_ready
+
+        if loc2_ready then
+            err loc2 = getLocation()
+        else
+            loc2 = loc1
+            -- Something weird happened, let's abort.
+        end
 
         -- Now move back down
         turtle.back()
