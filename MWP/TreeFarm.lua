@@ -1,6 +1,28 @@
-turtle.refuel()
-local success, data = turtle.inspect()
-if success then
-    print("Block name: ", data.name)
-    print("Block metadata: ", data.metadata)
+local direction = 0
+while true do
+    turtle.refuel()
+    local success, data = turtle.inspect()
+    if (not success) then
+        turtle.forward()
+    elseif (data.name == "minecraft:log") then
+        turtle.dig()
+        turtle.forward()
+        while(turtle.detectUp()) do
+            turtle.digUp()
+            turtle.up()
+        end
+        while(not turtle.detectDown()) do
+            turtle.down()
+        end
+    elseif (direction == 0) then
+        turtle.turnRight()
+        turtle.forward()
+        turtle.turnRight()
+        direction = 1
+    elseif (direction == 1) then
+        turtle.turnLeft()
+        turtle.forward()
+        turtle.turnLeft()
+        direction = 0
+    end
 end
