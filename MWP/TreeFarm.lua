@@ -15,7 +15,7 @@ end
 while true do
     local success, data = turtle.inspectUp()
     if success then
-        if (data.name == "minecraft:furnace") then
+        if (data.name == "minecraft:furnace" or data.name == "minecraft:furnace") then
             print("furnace detected!")
             turtle.suckUp() -- pull out produced charcoal
             turtle.select(1)
