@@ -8,7 +8,8 @@ for i = 1, 16 do
     local fuel = turtle.getItemDetail()
     if fuel then
         if (fuel.name == "minecraft:charcoal" or fuel.name == "minecraft:coal") then
-            turtle.refuel(63)
+            turtle.select(1)
+            turtle.refuel(turtle.getItemCount(1)-1) -- leave something in slot
         end
     end
 end
@@ -22,9 +23,12 @@ while true do
             local item = turtle.getItemDetail()
             if item then
                 if (item.name == "minecraft:charcoal" or item.name == "minecraft:coal") then
-                    turtle.dropUp(8) -- all that is needed
+                    if (turtle.getItemCount(1) > 8) then
+                        turtle.dropUp(8) -- all that is needed
+                    end
                 end
             end
+            turtle.refuel(turtle.getItemCount(1)-1)
             print("back it on up")
             turtle.back()
             turtle.up()
@@ -34,7 +38,7 @@ while true do
             local item = turtle.getItemDetail()
             if item then
                 if (item.name == "minecraft:log") then
-                    turtle.dropDown(63) -- leave one to reserve slot
+                    turtle.dropDown(turtle.getItemCount(3)-1) -- leave one to reserve slot
                 end
             end
             turtle.back()
@@ -57,7 +61,7 @@ while true do
         turtle.select(2)
         local item = turtle.getItemDetail()
         if item then
-            if (item.name == "minecraft:sapling") then
+            if (item.name == "minecraft:sapling" and turtle.getItemCount(2) > 1) then
                 turtle.placeDown()
             end
         end
