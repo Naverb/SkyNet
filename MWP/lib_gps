@@ -22,6 +22,7 @@ function getOrientation(localMode)
         return nil
         -- Computers don't have an orientation
     end
+    
     if not localMode then
         local err, loc1 = getLocation()
         -- Now we'll move the turtle
@@ -47,6 +48,7 @@ function getOrientation(localMode)
                         -- At this point, if we want to improve the gps code, we'd tell the robot to return to
                         -- it's original position, then have it mine the block in front of it to create an opening.
                         -- We'd want to check to see if the block in front is valuable however...
+                    end
                 end
             end
         until loc2_ready
