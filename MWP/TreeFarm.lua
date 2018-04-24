@@ -2,8 +2,10 @@ local data
 for i = 1, 16 do
     turtle.select(i)
     local data = turtle.getItemDetail()
-    if (data.name ~= "minecraft:sapling") then
-        turtle.refuel()
+    if data then
+        if (data.name ~= "minecraft:sapling") then
+            turtle.refuel()
+        end
     end
   end
 while true do
