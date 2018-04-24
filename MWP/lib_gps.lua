@@ -23,7 +23,7 @@ function getOrientation(localMode)
         -- Computers don't have an orientation
     end
     if not localMode then
-        local loc1 = getLocation()
+        local err, loc1 = getLocation()
         -- Now we'll move the turtle
 
         local delta_y = 0
@@ -32,7 +32,7 @@ function getOrientation(localMode)
         repeat
             repeat
                 if turtle.forward() then
-                    local loc2 = getLocation()
+                    local err, loc2 = getLocation()
                     rotationCount = 4
                 else 
                     turtle.turnRight()
