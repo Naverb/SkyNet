@@ -33,12 +33,13 @@ for i = 1, 16 do
     end
 end
 while true do
+    print(turtle.getFuelLevel())
     local success, data = turtle.inspectUp()
     if success then
         if (data.name == "minecraft:furnace" or data.name == "minecraft:lit_furnace") then
             print("furnace detected!")
-            turtle.suckUp() -- pull out produced charcoal
             turtle.select(1)
+            turtle.suckUp() -- pull out produced charcoal
             local item = turtle.getItemDetail()
             if item then
                 if (item.name == "minecraft:charcoal" or item.name == "minecraft:coal") then
@@ -47,7 +48,7 @@ while true do
                     end
                 end
             end
-            turtle.refuel(turtle.getItemCount(1)-1)
+            turtle.refuel(turtle.getItemCount(1)/3)
             print("back it on up")
             turtle.back()
             turtle.up()
