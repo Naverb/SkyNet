@@ -168,6 +168,7 @@ function goto(destination, tolerance, breakBlocks)
         else
             print('Failed to get trajectory, aborting goto to '.. trajectory:tostring())
             break
+        end
 
     until trajectory:length < tolerance
 end
