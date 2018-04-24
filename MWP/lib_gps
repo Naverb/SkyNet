@@ -42,19 +42,22 @@ function getOrientation(localMode)
                     rotationCount = (rotationCount + 1) % 4
                 end
             until rotationCount < 1
-            print(loc2)
+
             if not loc2_ready then
-                rotationCount = 0
+                rotationCount = rotationCount % 4
                 if not turtle.up() then
                     if turtle.digUp() then
-                        turtle.up()
+                        if turtle.up() then
+                            delta_y = delta_y + 1
+                        end
                     else
                         loc2_ready = true
                         -- We failed to move the turtle, so we give up.
                     end
+                else
+                    delta_y = delta_y + 1
+                    -- The turtle moved up one block, so let's keep track of that.
                 end
-
-                delta_y = delta_y + 1
             end
         until loc2_ready
 
