@@ -39,6 +39,7 @@ function getOrientation(localMode)
                     rotationCount = rotationCount + 1
                 end
             until rotationCount == 4
+            print(loc2)
             if loc2 == nil then
                 rotationCount = 0
                 if not turtle.up() then
