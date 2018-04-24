@@ -33,12 +33,12 @@ function getOrientation(localMode)
             repeat
                 if turtle.forward() then
                     local err, loc2 = getLocation()
-                    rotationCount = 4
+                    rotationCount = 0
                 else 
                     turtle.turnRight()
-                    rotationCount = rotationCount + 1
+                    rotationCount = (rotationCount + 1) % 4
                 end
-            until rotationCount == 4
+            until rotationCount < 1
             print(loc2)
             if loc2 == nil then
                 rotationCount = 0
