@@ -8,7 +8,7 @@ for i = 1, 16 do
     local fuel = turtle.getItemDetail()
     if fuel then
         if (fuel.name == "minecraft:charcoal" or fuel.name == "minecraft:coal") then
-            turtle.refuel()
+            turtle.refuel(63)
         end
     end
 end
@@ -20,7 +20,7 @@ while true do
             turtle.select(1)
             local item = turtle.getItemDetail()
             if item then
-                if (item.name == "minecraft:coal") then
+                if (item.name == "minecraft:charcoal" or item.name == "minecraft:coal") then
                     turtle.dropUp(8) -- all that is needed
                 end
             end
