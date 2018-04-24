@@ -1,6 +1,12 @@
 local direction = 0
+local data
+for i = 1, 16 do
+    turtle.select(i)
+    if (turtle.getItemDetail()[0] ~= "minecraft:sapling") then
+        turtle.refuel()
+    end
+  end
 while true do
-    turtle.refuel()
     turtle.suck()
     local success, data = turtle.inspect()
     if (not success) then
