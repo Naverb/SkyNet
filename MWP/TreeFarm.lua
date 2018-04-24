@@ -1,4 +1,3 @@
-local data
 for i = 1, 16 do
     turtle.select(i)
     local data = turtle.getItemDetail()
@@ -7,7 +6,7 @@ for i = 1, 16 do
             turtle.refuel()
         end
     end
-  end
+end
 while true do
     turtle.suck()
     local success, data = turtle.inspect()
