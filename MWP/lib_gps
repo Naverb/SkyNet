@@ -22,7 +22,7 @@ function getOrientation(localMode)
         return nil
         -- Computers don't have an orientation
     end
-    
+
     if not localMode then
         local err, loc1 = getLocation()
         -- Now we'll move the turtle
@@ -98,11 +98,11 @@ function orientTurtle(direction, localMode)
     if localMode then
         repeat
             turtle.turnRight()
-        until direction:dot(local_orientation) ~= 0
+        until direction:dot(local_orientation) > 0
     else
         repeat
             turtle.turnRight()
-        until direction:dot(getOrientation()) ~= 0
+        until direction:dot(getOrientation()) > 0
     end
 
     local_orientation = direction
