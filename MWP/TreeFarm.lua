@@ -34,7 +34,7 @@ function totalRefuel()
         turtle.select(i)
         local fuel = turtle.getItemDetail()
         if fuel then
-            if (fuel.name == "minecraft:charcoal") then
+            if (fuel.name == "minecraft:charcoal" or fuel.name == "minecraft:coal") then
                 turtle.select(1)
                 turtle.refuel(turtle.getItemCount(1)-1) -- leave something in slot
             end
