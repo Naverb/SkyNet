@@ -70,11 +70,9 @@ function getOrientation(localMode)
         -- We don't care about the vertical component
         disp.y = 0
 
-        print(disp)
         return disp
     else 
         -- This is localMode == true
-        print(local_orientation)
         return local_orientation
     end
 end
@@ -132,10 +130,6 @@ function traverseTrajectory(trajectory, breakBlocks)
     local sign_y = dy/math.abs(dy)
     local sign_z = dz/math.abs(dz)
 
-    print(sign_x)
-    print(sign_y)
-    print(sign_z)
-    
     -- Move in x first
     if (dx ~= 0) then
         orientTurtle(I:mul(sign_x), true)
