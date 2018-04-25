@@ -19,11 +19,11 @@ function cornerCheck()
 end
 
 function sortSlots()
-    for i = 1, 3 do
-        for j = 4, 16 do
-            turtle.select(j)
-            if turtle.compareTo(i) then
-                turtle.transferTo(i)
+    for i = 4, 16 do
+        turtle.select(i)
+        for j = 1, 3 do
+            if turtle.compareTo(j) then
+                turtle.transferTo(j)
             end
         end
     end
@@ -66,10 +66,15 @@ function refuelFurnace()
     local item = turtle.getItemDetail()
     if item then
         if (item.name == "minecraft:coal") then
-            turtle.dropUp(8) -- all that is needed
+            if (turtle.getItemCount(1) > 8) then
+                turtle.dropUp(8) -- all that is needed
+                totalRefuel() -- use rest of fuel
+            else
+                turtle.dropUp(turtle.getItemCount(1)-1)
+            end
         end
     end
-    totalRefuel() -- use rest of fuel
+    print(turtle.getFuelLevel())
     turtle.forward()
 end
 
@@ -104,12 +109,18 @@ function evadeSaplings()
     turtle.down()
 end
 
+function offloadChest()
+    for i = 4, 16 do
+        turtle.select(i)
+        turtle.drop()
+    end
+    cornerCheck()
+end
+
 -- ====== BEGIN MAIN CODE ======
 totalRefuel()
 
 while true do
-
-    print(turtle.getFuelLevel())
 
     local success, data = turtle.inspectUp()
     if success then
@@ -121,18 +132,14 @@ while true do
 
     local success, data = turtle.inspect()
     if (not success) then
-        turtle.suck()
+        turtle.suck() -- OPTIMIZE THIS - perhaps with water?
         turtle.forward()
     elseif (data.name == "minecraft:log") then
         cutTree()
     elseif (data.name == "minecraft:sapling") then
         evadeSaplings()
     elseif (data.name == "minecraft:chest") then
-        for i = 4, 16 do
-            turtle.select(i)
-            turtle.drop()
-        end
-        cornerCheck()
+        offloadChest()
     else
         cornerCheck()
     end
