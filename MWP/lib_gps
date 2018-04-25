@@ -95,28 +95,30 @@ end
 
 -- Rotate until turtle matches given orientation
 function orientTurtle(direction, localMode)
-    if localMode then
-        if not (direction:dot(local_orientation) > 0) then
-            repeat
-                turtle.turnRight()
-                -- Rotate the orientation vector π/2 radians in xz plane.
-                local x_prime = -1 * local_orientation.z
-                local z_prime =  local_orientation.x
+    -- Let's make sure the direction vector is nonzero
+    if direction:length() > 0 then
+        if localMode then
+            if not (direction:dot(local_orientation) > 0) then
+                repeat
+                    turtle.turnRight()
+                    -- Rotate the orientation vector π/2 radians in xz plane.
+                    local x_prime = -1 * local_orientation.z
+                    local z_prime =  local_orientation.x
 
-                local_orientation.x = x_prime
-                local_orientation.z = z_prime
+                    local_orientation.x = x_prime
+                    local_orientation.z = z_prime
 
-            until (direction:dot(local_orientation) > 0)
+                until (direction:dot(local_orientation) > 0)
+            end
+        else
+            if not (direction:dot(getOrientation()) > 0) then
+                repeat
+                    turtle.turnRight()
+                until (direction:dot(getOrientation()) > 0)
+            end
         end
-    else
-        if not (direction:dot(getOrientation()) > 0) then
-            repeat
-                turtle.turnRight()
-            until (direction:dot(getOrientation()) > 0)
-        end
+        local_orientation = direction
     end
-
-    local_orientation = direction
 end
 
 -- Travel down trajectory vector
