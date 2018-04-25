@@ -34,7 +34,7 @@ function totalRefuel()
         turtle.select(i)
         local fuel = turtle.getItemDetail()
         if fuel then
-            if (fuel.name == "minecraft:charcoal" or fuel.name == "minecraft:coal") then
+            if (fuel.name == "minecraft:charcoal") then
                 turtle.select(1)
                 turtle.refuel(turtle.getItemCount(1)-1) -- leave something in slot
             end
@@ -45,7 +45,7 @@ end
 function refuelFurnace()
     turtle.select(1)
     turtle.suckUp() -- pull out produced charcoal
-    turtle.refuel(13) -- ensure we have a baseline amount of fuel
+    turtle.refuel(13) -- FIGURE OUT HOW TO DEAL WITH FUEL IN OTHER SLOTS EFFICIENTLY
     turtle.back()
     turtle.up()
     turtle.suck()
@@ -65,10 +65,8 @@ function refuelFurnace()
     turtle.select(1)
     local item = turtle.getItemDetail()
     if item then
-        if (item.name == "minecraft:charcoal" or item.name == "minecraft:coal") then
-            if (turtle.getItemCount(1) > 8) then
-                turtle.dropUp(8) -- all that is needed
-            end
+        if (item.name == "minecraft:charcoal") then
+            turtle.dropUp(8) -- all that is needed
         end
     end
     totalRefuel() -- use rest of fuel
@@ -94,6 +92,7 @@ function cutTree()
     while(not turtle.detectDown()) do
         turtle.down()
     end
+    turtle.dig()
     turtle.forward()
     turtle.down()
 end
