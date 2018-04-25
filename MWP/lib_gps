@@ -137,29 +137,33 @@ function traverseTrajectory(trajectory, breakBlocks)
     print(sign_z)
     
     -- Move in x first
-    orientTurtle(I:mul(sign_x), true)
-    for i = 1,math.abs(dx) do
-        if not turtle.forward() then
-            if breakBlocks then
-                turtle.dig()
-                turtle.forward()
+    if (dx ~= 0) then
+        orientTurtle(I:mul(sign_x), true)
+        for i = 1,math.abs(dx) do
+            if not turtle.forward() then
+                if breakBlocks then
+                    turtle.dig()
+                    turtle.forward()
+                end
             end
         end
     end
 
     -- Move in z now
-    orientTurtle(K:mul(sign_z), true)
-    for i = 1,math.abs(dz) do
-        if not turtle.forward() then
-            if breakBlocks then
-                turtle.dig()
-                turtle.forward()
+    if (dz ~= 0) then
+        orientTurtle(K:mul(sign_z), true)
+        for i = 1,math.abs(dz) do
+            if not turtle.forward() then
+                if breakBlocks then
+                    turtle.dig()
+                    turtle.forward()
+                end
             end
         end
     end
 
     -- Move in y
-    if sign_y > 0 then
+    if (sign_y) > 0 then
         for i = 1,math.abs(dy) do
             if not turtle.up() then
                 if breakBlocks then
@@ -168,7 +172,7 @@ function traverseTrajectory(trajectory, breakBlocks)
                 end
             end
         end
-    elseif sign_y < 0 then
+    elseif (sign_y) < 0 then
         for i = 1,math.abs(dy) do
             if not turtle.down() then
                 if breakBlocks then
