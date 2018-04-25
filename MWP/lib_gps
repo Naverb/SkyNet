@@ -118,9 +118,9 @@ end
 -- Travel down trajectory vector
 function traverseTrajectory(trajectory, breakBlocks)
     
-    local dx = trajectory:dot(I)
-    local dy = trajectory:dot(J)
-    local dz = trajectory:dot(K)
+    local dx = trajectory.x
+    local dy = trajectory.y
+    local dz = trajectory.z
 
     local sign_x = dx/math.abs(dx)
     local sign_y = dx/math.abs(dy)
@@ -128,7 +128,7 @@ function traverseTrajectory(trajectory, breakBlocks)
     
     -- Move in x first
     orientTurtle(I:mul(sign_x), true)
-    for i = 1,math.abs(dx),1 do
+    for i = 1,math.abs(dx) do
         if not turtle.forward() then
             if breakBlocks then
                 turtle.dig()
@@ -139,7 +139,7 @@ function traverseTrajectory(trajectory, breakBlocks)
 
     -- Move in z now
     orientTurtle(K:mul(sign_z), true)
-    for i = 1,math.abs(dx),1 do
+    for i = 1,math.abs(dx) do
         if not turtle.forward() then
             if breakBlocks then
                 turtle.dig()
@@ -150,7 +150,7 @@ function traverseTrajectory(trajectory, breakBlocks)
 
     -- Move in y
     if sign_y > 0 then
-        for i = 1,math.abs(dy),1 do
+        for i = 1,math.abs(dy) do
             if not turtle.up() then
                 if breakBlocks then
                     turtle.digUp()
@@ -159,7 +159,7 @@ function traverseTrajectory(trajectory, breakBlocks)
             end
         end
     elseif sign_y < 0 then
-        for i = 1,math.abs(dy),1 do
+        for i = 1,math.abs(dy) do
             if not turtle.down() then
                 if breakBlocks then
                     turtle.digDown()
