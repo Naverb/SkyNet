@@ -30,7 +30,7 @@ function sortSlots()
 end
 
 function totalRefuel()
-    for i = 1, 16 do
+    for i = 4, 16 do
         turtle.select(i)
         local fuel = turtle.getItemDetail()
         if fuel then
@@ -110,12 +110,12 @@ totalRefuel()
 
 while true do
 
-    sortSlots()
     print(turtle.getFuelLevel())
 
     local success, data = turtle.inspectUp()
     if success then
         if (data.name == "minecraft:furnace" or data.name == "minecraft:lit_furnace") then
+            sortSlots()
             refuelFurnace()
         end
     end
