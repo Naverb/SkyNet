@@ -30,7 +30,7 @@ function sortSlots()
 end
 
 function totalRefuel()
-    for i = 4, 16 do
+    for i = 1, 16 do
         turtle.select(i)
         local fuel = turtle.getItemDetail()
         if fuel then
