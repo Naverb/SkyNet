@@ -129,8 +129,8 @@ function traverseTrajectory(trajectory, breakBlocks)
     local dz = trajectory.z
 
     local sign_x = dx/math.abs(dx)
-    local sign_y = dx/math.abs(dy)
-    local sign_z = dx/math.abs(dz)
+    local sign_y = dy/math.abs(dy)
+    local sign_z = dz/math.abs(dz)
 
     print(sign_x)
     print(sign_y)
