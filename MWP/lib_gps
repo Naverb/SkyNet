@@ -95,62 +95,76 @@ end
 
 -- Rotate until turtle matches given orientation
 function orientTurtle(direction, localMode)
-    if localMode then
-        repeat
-            turtle.turnRight()
-            -- Rotate the orientation vector π/2 radians in xz plane.
-            local x_prime = -1 * local_orientation.z
-            local z_prime =  local_orientation.x
+    -- Let's make sure the direction vector is nonzero
+    if direction:length() > 0 then
+        if localMode then
+            if not (direction:dot(local_orientation) > 0) then
+                repeat
+                    turtle.turnRight()
+                    -- Rotate the orientation vector π/2 radians in xz plane.
+                    local x_prime = -1 * local_orientation.z
+                    local z_prime =  local_orientation.x
 
-            local_orientation.x = x_prime
-            local_orientation.z = z_prime
+                    local_orientation.x = x_prime
+                    local_orientation.z = z_prime
 
-        until direction:dot(local_orientation) > 0
-    else
-        repeat
-            turtle.turnRight()
-        until direction:dot(getOrientation()) > 0
+                until (direction:dot(local_orientation) > 0)
+            end
+        else
+            if not (direction:dot(getOrientation()) > 0) then
+                repeat
+                    turtle.turnRight()
+                until (direction:dot(getOrientation()) > 0)
+            end
+        end
+        local_orientation = direction
     end
-
-    local_orientation = direction
 end
 
 -- Travel down trajectory vector
 function traverseTrajectory(trajectory, breakBlocks)
     
-    local dx = trajectory:dot(I)
-    local dy = trajectory:dot(J)
-    local dz = trajectory:dot(K)
+    local dx = trajectory.x
+    local dy = trajectory.y
+    local dz = trajectory.z
 
     local sign_x = dx/math.abs(dx)
-    local sign_y = dx/math.abs(dy)
-    local sign_z = dx/math.abs(dz)
+    local sign_y = dy/math.abs(dy)
+    local sign_z = dz/math.abs(dz)
+
+    print(sign_x)
+    print(sign_y)
+    print(sign_z)
     
     -- Move in x first
-    orientTurtle(I:mul(sign_x), true)
-    for i = 1,math.abs(dx),1 do
-        if not turtle.forward() then
-            if breakBlocks then
-                turtle.dig()
-                turtle.forward()
+    if (dx ~= 0) then
+        orientTurtle(I:mul(sign_x), true)
+        for i = 1,math.abs(dx) do
+            if not turtle.forward() then
+                if breakBlocks then
+                    turtle.dig()
+                    turtle.forward()
+                end
             end
         end
     end
 
     -- Move in z now
-    orientTurtle(K:mul(sign_z), true)
-    for i = 1,math.abs(dx),1 do
-        if not turtle.forward() then
-            if breakBlocks then
-                turtle.dig()
-                turtle.forward()
+    if (dz ~= 0) then
+        orientTurtle(K:mul(sign_z), true)
+        for i = 1,math.abs(dz) do
+            if not turtle.forward() then
+                if breakBlocks then
+                    turtle.dig()
+                    turtle.forward()
+                end
             end
         end
     end
 
     -- Move in y
-    if sign_y > 0 then
-        for i = 1,math.abs(dy),1 do
+    if (sign_y) > 0 then
+        for i = 1,math.abs(dy) do
             if not turtle.up() then
                 if breakBlocks then
                     turtle.digUp()
@@ -158,8 +172,8 @@ function traverseTrajectory(trajectory, breakBlocks)
                 end
             end
         end
-    elseif sign_y < 0 then
-        for i = 1,math.abs(dy),1 do
+    elseif (sign_y) < 0 then
+        for i = 1,math.abs(dy) do
             if not turtle.down() then
                 if breakBlocks then
                     turtle.digDown()
