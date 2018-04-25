@@ -42,7 +42,7 @@ function totalRefuel()
     end
 end
 
-function refuelFurnance()
+function refuelFurnace()
     turtle.select(1)
     turtle.suckUp() -- pull out produced charcoal
     turtle.refuel(13) -- ensure we have a baseline amount of fuel
