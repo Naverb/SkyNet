@@ -58,8 +58,7 @@ path = {
                         
                         coroutine.yield()
                     end
-                    self.currentWaypointNumber = 0
-                    return 0
+                    self.currentWaypointNumber = 1
                 end)
 
                 local stop = coroutine.wrap(function()
@@ -67,12 +66,10 @@ path = {
                     local reason = parallel.waitForAny(os.pullEvent('stop_' .. self.name), os.pullEvent('pause_' .. self.name))
 
                     if (reason == 1) then
-                        self.currentWaypointNumber = 0
+                        self.currentWaypointNumber = 1
                     end
 
                     coroutine.yield()
-
-                    return 0
                 end)
                 -- This uses computercraft's parallel api to traverse the path of waypoints. But if someone calls self.stop(), then we're done.
                 begin()
@@ -80,11 +77,9 @@ path = {
             end,
     stop = function(self)
                 os.queueEvent('stop_' .. self.name)
-                return 0
             end,
     pause = function(self)
                 os.queueEvent('pause_' .. self.name)
-                return 0
             end
 }
 
@@ -93,7 +88,7 @@ function path:new(_name, _waypoints)
         name = _name or "untitled_path",
         waypoints = _waypoints or {},
         -- If the path was paused, this is nonzero.
-        currentWaypointNumber = 0
+        currentWaypointNumber = 1
     }
     setmetatable(obj,self)
     self.__index = self
