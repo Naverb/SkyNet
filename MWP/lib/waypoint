@@ -48,7 +48,7 @@ path = {
                 table.remove(self.waypoints)
             end,
     start = function(self, tolerance, breakBlocks)
-        
+                print('Starting path ' .. self.name)
                 local begin = function()
                     for i = self.currentWaypointNumber, #self.waypoints do
                         -- Now that we jumped to the latest waypoint, we are good
