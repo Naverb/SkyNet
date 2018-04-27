@@ -1,9 +1,9 @@
 os.loadAPI("SkyNet/MWP/lib/waypoint")
 
-corner1 = vector.new(-114,90,359)
-corner2 = vector.new(-178,90,359)
-corner3 = vector.new(-178,90,427)
-corner4 = vector.new(-114,90,423)
+corner1 = vector.new(-114,91,359)
+corner2 = vector.new(-178,91,359)
+corner3 = vector.new(-178,91,427)
+corner4 = vector.new(-114,91,423)
 
 point1 = waypoint.waypoint:new('point1',corner1)
 point2 = waypoint.waypoint:new('point2',corner2)
@@ -18,3 +18,7 @@ print('Going to tile 3')
 point3:go(1,false)
 print('Going to tile 4')
 point4:go(1,false)
+
+print('Testing path')
+path = waypoint.path:new('potato',{point1,point2,point3,point4})
+path:start(1,false)
