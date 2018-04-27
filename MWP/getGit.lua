@@ -5,7 +5,8 @@ while true do
     id, message = rednet.receive() -- wait until something is received over rednet
     if (message == "reloadGit") then
         redstone.setOutput("left", false)
-        sleep(2)
+        fs.delete('SkyNet')
+        shell.run("github","clone","Naverb/SkyNet","SkyNet")
         redstone.setOutput("left", true)
     end
 end
