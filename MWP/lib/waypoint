@@ -2,6 +2,21 @@
 local LIB_GPS_PATH = 'SkyNet/MWP/lib/gps'
 os.loadAPI(LIB_GPS_PATH)
 
+waypoint = {
+    updateLocation = function(self)
+                        local err, loc = gps.getLocation()
+                        if not err then
+                            self.location = loc
+                        else
+                            self.err = true
+                        end
+                    end,
+    go = function(self, tolerance, breakBlocks)
+                previous_location:updateLocation()
+                gps.goto(self.location, tolerance, breakBlocks)
+            end
+}
+
 function waypoint:new(_name, loc)
     --Lua constructors scare me.
     local obj = {
@@ -15,33 +30,57 @@ function waypoint:new(_name, loc)
 end
 
 -- We create this global variable so that we may work with the robot's prior location
-previous_location = function ()
-    local err, loc = gps.getLocation()
-    if not err then
-        return waypoint:new('Previous_Location', loc)
-    else
-        return waypoint:new('Previous_Location', vector.new(0,0,0))
+local err, loc = gps.getLocation()
+if not err then
+    previous_location = waypoint:new('Previous_Location', loc)
+else
+    previous_location = waypoint:new('Previous_Location', vector.new(0,0,0))
 end
-
-function waypoint.updateLocation(self)
-    local err, loc = gps.getLocation()
-    if not err then
-        self.location = loc
-    else
-        self.err = true
-    end
-end
-
-function waypoint.goto(self, tolerance, breakBlocks)
-    previous_location:updateLocation()
-    gps.goto(self.location, tolerance, breakBlocks)
-end
-
 
 -- Let's create some basic properties of the path class
 path = {
     waypoints = {},
-    name = '__proto__path'
+    name = '__proto__path',
+    append = function(self,waypoint)
+                table.insert(self.waypoints,waypoint)
+            end,
+    pop = function(self)
+                table.remove(self.waypoints)
+            end,
+    start = function(self, tolerance, breakBlocks)
+        
+                local function begin()
+                    for i,#self.waypoints do
+                        -- Jump to last waypoint
+                        i = self.currentWaypointNumber
+                        -- Now that we jumped to the latest waypoint, we are good
+                        self.currentWaypointNumber = i + 1
+                        waypoint[i]:go(tolerance,breakBlocks)
+                    end
+                    self.currentWaypointNumber = 0
+                    return 0
+                end
+
+                local function stop()
+                    -- waitForAny() returns the numner corresponding to whether the first or second argument terminated first
+                    local reason = parallel.waitForAny(os.pullEvent('stop_' .. self.name), os.pullEvent('pause_' .. self.name))
+
+                    if (reason == 1) then
+                        self.currentWaypointNumber = 0
+                    end
+                    return 0
+                end
+                -- This uses computercraft's parallel api to traverse the path of waypoints. But if someone calls self.stop(), then we're done.
+                return parallel.waitForAny(stop(), begin())
+            end,
+    stop = function(self)
+                os.queueEvent('stop_' .. self.name)
+                return 0
+            end,
+    pause = function(self)
+                os.queueEvent('pause_' .. self.name)
+                return 0
+            end
 }
 
 function path:new(_name, _waypoints)
@@ -56,48 +95,4 @@ function path:new(_name, _waypoints)
     return obj
 end
 
-function path.append(self, waypoint)
-    table.insert(self.waypoints,waypoint)
-end
-
-function path.pop(self)
-    table.remove(self.waypoints)
-end
-
-function path.start(self, tolerance, breakBlocks)
-
-    local function begin()
-        for i,#self.waypoints do
-            -- Jump to last waypoint
-            i = self.currentWaypointNumber
-            -- Now that we jumped to the latest waypoint, we are good
-            self.currentWaypointNumber = i + 1
-            waypoint[i]:goto(tolerance,breakBlocks)
-        end
-        self.currentWaypointNumber = 0
-        return 0
-    end
-
-    local function stop()
-        -- waitForAny() returns the numner corresponding to whether the first or second argument terminated first
-        local reason = parallel.waitForAny(os.pullEvent('stop_' .. self.name), os.pullEvent('pause_' .. self.name))
-
-        if (reason == 1) then
-            self.currentWaypointNumber = 0
-        end
-        return 0
-    end
-    -- This uses computercraft's parallel api to traverse the path of waypoints. But if someone calls self.stop(), then we're done.
-    return parallel.waitForAny(stop(), begin())
-end
-
-function path.stop(self)
-    os.queueEvent('stop_' .. self.name)
-    return 0
-end
-
-function path.pause(self)
-    os.queueEvent('pause_' .. self.name)
-    return 0
-end
 
