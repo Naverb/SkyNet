@@ -62,7 +62,7 @@ path = {
                     return 0
                 end
 
-                local function stop()
+                local stop = function()
                     -- waitForAny() returns the numner corresponding to whether the first or second argument terminated first
                     local reason = parallel.waitForAny(os.pullEvent('stop_' .. self.name), os.pullEvent('pause_' .. self.name))
 
