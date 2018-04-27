@@ -12,5 +12,5 @@ point4 = waypoint.waypoint:new('point4',corner4)
 
 print('Testing path')
 path = waypoint.path:new('potato',{point1,point2,point3,point4})
-print(potato.name)
+print(path.name)
 path:start(1,false)
