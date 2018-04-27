@@ -49,7 +49,7 @@ path = {
             end,
     start = function(self, tolerance, breakBlocks)
         
-                --local function begin()
+                local function begin()
                 --    for i,#self.waypoints do
                 --        -- Jump to last waypoint
                 --        i = self.currentWaypointNumber
