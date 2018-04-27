@@ -47,7 +47,9 @@ path = {
 function path:new(_name, _waypoints)
     local obj = {
         name = _name or "untitled_path",
-        waypoints = _waypoints or {}
+        waypoints = _waypoints or {},
+        -- If the path was paused, this is nonzero.
+        currentWaypointNumber = 0
     }
     setmetatable(obj,self)
     self.__index = self
@@ -62,15 +64,40 @@ function path.pop(self)
     table.remove(self.waypoints)
 end
 
-function path.start(self)
+function path.start(self, tolerance, breakBlocks)
 
+    local function begin()
+        for i,#self.waypoints do
+            -- Jump to last waypoint
+            i = self.currentWaypointNumber
+            -- Now that we jumped to the latest waypoint, we are good
+            self.currentWaypointNumber = i + 1
+            waypoint[i]:goto(tolerance,breakBlocks)
+        end
+        self.currentWaypointNumber = 0
+        return 0
+    end
+
+    local function stop()
+        -- waitForAny() returns the numner corresponding to whether the first or second argument terminated first
+        local reason = parallel.waitForAny(os.pullEvent('stop_' .. self.name), os.pullEvent('pause_' .. self.name))
+
+        if (reason == 1) then
+            self.currentWaypointNumber = 0
+        end
+        return 0
+    end
+    -- This uses computercraft's parallel api to traverse the path of waypoints. But if someone calls self.stop(), then we're done.
+    return parallel.waitForAny(stop(), begin())
 end
 
 function path.stop(self)
-
+    os.queueEvent('stop_' .. self.name)
+    return 0
 end
 
 function path.pause(self)
-
+    os.queueEvent('pause_' .. self.name)
+    return 0
 end
 
