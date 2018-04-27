@@ -12,6 +12,7 @@ waypoint = {
                         end
                     end,
     go = function(self, tolerance, breakBlocks)
+                print('Going to waypoint ' .. self.name)
                 previous_location:updateLocation()
                 gps2.goto(self.location, tolerance, breakBlocks)
             end
