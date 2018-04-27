@@ -59,7 +59,7 @@ path = {
                         self.waypoints[i]:go(tolerance,breakBlocks)
                     end
                     self.currentWaypointNumber = 1
-                end)
+                end--)
 
                 local stop = coroutine.wrap(function()
                     -- waitForAny() returns the numner corresponding to whether the first or second argument terminated first
