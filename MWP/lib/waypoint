@@ -12,6 +12,8 @@ waypoint = {
                         end
                     end,
     go = function(self, tolerance, breakBlocks)
+                print('Going to waypoint ' .. self.name)
+                print(self.location)
                 previous_location:updateLocation()
                 gps2.goto(self.location, tolerance, breakBlocks)
             end
@@ -49,42 +51,33 @@ path = {
             end,
     start = function(self, tolerance, breakBlocks)
                 print('Starting path ' .. self.name)
-                local begin = coroutine.wrap(function()
+                local begin = function()-- coroutine.wrap(function()
                     for i = self.currentWaypointNumber, #self.waypoints do
                         -- Now that we jumped to the latest waypoint, we are good
                         self.currentWaypointNumber = i + 1
                         print('In for loop')
-                        waypoint[i]:go(tolerance,breakBlocks)
-                        
-                        coroutine.yield()
+                        self.waypoints[i]:go(tolerance,breakBlocks)
                     end
-                    self.currentWaypointNumber = 0
-                    return 0
-                end)
+                    self.currentWaypointNumber = 1
+                end--)
 
                 local stop = coroutine.wrap(function()
                     -- waitForAny() returns the numner corresponding to whether the first or second argument terminated first
                     local reason = parallel.waitForAny(os.pullEvent('stop_' .. self.name), os.pullEvent('pause_' .. self.name))
 
                     if (reason == 1) then
-                        self.currentWaypointNumber = 0
+                        self.currentWaypointNumber = 1
                     end
-
-                    coroutine.yield()
-
-                    return 0
                 end)
                 -- This uses computercraft's parallel api to traverse the path of waypoints. But if someone calls self.stop(), then we're done.
                 begin()
-                stop()
+                --stop()
             end,
     stop = function(self)
                 os.queueEvent('stop_' .. self.name)
-                return 0
             end,
     pause = function(self)
                 os.queueEvent('pause_' .. self.name)
-                return 0
             end
 }
 
@@ -93,7 +86,7 @@ function path:new(_name, _waypoints)
         name = _name or "untitled_path",
         waypoints = _waypoints or {},
         -- If the path was paused, this is nonzero.
-        currentWaypointNumber = 0
+        currentWaypointNumber = 1
     }
     setmetatable(obj,self)
     self.__index = self
