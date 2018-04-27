@@ -30,7 +30,7 @@ function waypoint:new(_name, loc)
 end
 
 -- We create this global variable so that we may work with the robot's prior location
-local err, loc = gps.getLocation()
+local err, loc = gps2.getLocation()
 if not err then
     previous_location = waypoint:new('Previous_Location', loc)
 else
