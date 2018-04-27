@@ -49,7 +49,7 @@ path = {
             end,
     start = function(self, tolerance, breakBlocks)
                 print('Starting path ' .. self.name)
-                local begin = function()
+                local begin = coroutine.wrap(function()
                     for i = self.currentWaypointNumber, #self.waypoints do
                         -- Now that we jumped to the latest waypoint, we are good
                         self.currentWaypointNumber = i + 1
@@ -60,10 +60,13 @@ path = {
                     end
                     self.currentWaypointNumber = 0
                     return 0
-                end
+                end)
 
-                local stop = function()
+                local stop = coroutine.wrap(function()
                     -- waitForAny() returns the numner corresponding to whether the first or second argument terminated first
+                    repeat
+
+                    until
                     local reason = parallel.waitForAny(os.pullEvent('stop_' .. self.name), os.pullEvent('pause_' .. self.name))
 
                     if (reason == 1) then
@@ -73,9 +76,10 @@ path = {
                     coroutine.yield()
 
                     return 0
-                end
+                end)
                 -- This uses computercraft's parallel api to traverse the path of waypoints. But if someone calls self.stop(), then we're done.
-                parallel.waitForAny(stop(), begin())
+                begin()
+                stop()
             end,
     stop = function(self)
                 os.queueEvent('stop_' .. self.name)
