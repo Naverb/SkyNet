@@ -55,6 +55,8 @@ path = {
                         self.currentWaypointNumber = i + 1
                         print('In for loop')
                         waypoint[i]:go(tolerance,breakBlocks)
+                        
+                        coroutine.yield()
                     end
                     self.currentWaypointNumber = 0
                     return 0
@@ -67,6 +69,9 @@ path = {
                     if (reason == 1) then
                         self.currentWaypointNumber = 0
                     end
+
+                    coroutine.yield()
+
                     return 0
                 end
                 -- This uses computercraft's parallel api to traverse the path of waypoints. But if someone calls self.stop(), then we're done.
