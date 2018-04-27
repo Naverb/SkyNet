@@ -13,7 +13,7 @@ waypoint = {
                     end,
     go = function(self, tolerance, breakBlocks)
                 print('Going to waypoint ' .. self.name)
-                print('With coords ' .. self.location)
+                print(self.location)
                 previous_location:updateLocation()
                 gps2.goto(self.location, tolerance, breakBlocks)
             end
