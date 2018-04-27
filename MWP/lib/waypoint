@@ -1,10 +1,10 @@
 -- This api requires the gps api
-local LIB_GPS_PATH = 'SkyNet/MWP/lib/gps'
+local LIB_GPS_PATH = 'SkyNet/MWP/lib/gps2'
 os.loadAPI(LIB_GPS_PATH)
 
 waypoint = {
     updateLocation = function(self)
-                        local err, loc = gps.getLocation()
+                        local err, loc = gps2.getLocation()
                         if not err then
                             self.location = loc
                         else
@@ -13,7 +13,7 @@ waypoint = {
                     end,
     go = function(self, tolerance, breakBlocks)
                 previous_location:updateLocation()
-                gps.goto(self.location, tolerance, breakBlocks)
+                gps2.goto(self.location, tolerance, breakBlocks)
             end
 }
 
