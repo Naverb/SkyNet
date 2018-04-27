@@ -53,6 +53,7 @@ path = {
                     for i = self.currentWaypointNumber, #self.waypoints do
                         -- Now that we jumped to the latest waypoint, we are good
                         self.currentWaypointNumber = i + 1
+                        print('In for loop')
                         waypoint[i]:go(tolerance,breakBlocks)
                     end
                     self.currentWaypointNumber = 0
