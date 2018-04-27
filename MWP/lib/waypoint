@@ -64,9 +64,6 @@ path = {
 
                 local stop = coroutine.wrap(function()
                     -- waitForAny() returns the numner corresponding to whether the first or second argument terminated first
-                    repeat
-
-                    until
                     local reason = parallel.waitForAny(os.pullEvent('stop_' .. self.name), os.pullEvent('pause_' .. self.name))
 
                     if (reason == 1) then
