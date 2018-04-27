@@ -54,7 +54,7 @@ path = {
                         -- Now that we jumped to the latest waypoint, we are good
                         self.currentWaypointNumber = i + 1
                         print('In for loop')
-                        waypoint[i]:go(tolerance,breakBlocks)
+                        self.waypoints[i]:go(tolerance,breakBlocks)
                         
                         coroutine.yield()
                     end
