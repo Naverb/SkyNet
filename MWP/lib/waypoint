@@ -71,7 +71,7 @@ path = {
                 end)
                 -- This uses computercraft's parallel api to traverse the path of waypoints. But if someone calls self.stop(), then we're done.
                 begin()
-                stop()
+                --stop()
             end,
     stop = function(self)
                 os.queueEvent('stop_' .. self.name)
