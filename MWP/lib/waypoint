@@ -49,14 +49,14 @@ path = {
             end,
     start = function(self, tolerance, breakBlocks)
         
-                local function begin()
-                --    for i,#self.waypoints do
-                --        -- Jump to last waypoint
-                --        i = self.currentWaypointNumber
+                local begin = function()
+                    for i,#self.waypoints do
+                        -- Jump to last waypoint
+                        i = self.currentWaypointNumber
                         -- Now that we jumped to the latest waypoint, we are good
-                --        self.currentWaypointNumber = i + 1
-                --        waypoint[i]:go(tolerance,breakBlocks)
-                --    end
+                        self.currentWaypointNumber = i + 1
+                        waypoint[i]:go(tolerance,breakBlocks)
+                    end
                     self.currentWaypointNumber = 0
                     return 0
                 end
