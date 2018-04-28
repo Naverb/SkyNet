@@ -24,6 +24,10 @@ function getOrientation(localMode)
     end
 
     if not localMode then
+
+        -- We note that getting location non-locally costs fuel, so before we do anything, we yield the process
+            -- to check whether we have sufficient fuel.
+        coroutine.yield()
         local err, loc1 = getLocation()
         -- Now we'll move the turtle
 
@@ -119,6 +123,27 @@ function orientTurtle(direction, localMode)
     end
 end
 
+-- In order to deal with event handling higher up, we need to write helper functions
+--      that yield the current coroutine before moving each block. Essentially, we are
+--      creating a parallel system where the robot checks auxiliary functions after
+--      moving a single block. That way, we can deal with event interrupts, etc..
+
+local forward =function ()
+    coroutine.yield()
+    return turtle.forward()
+end
+
+local up = function ()
+    coroutine.yield()
+    return turtle.up()
+end
+
+local down = function ()
+    coroutine.yield()
+    return turtle.down()
+end
+
+
 -- Travel down trajectory vector
 function traverseTrajectory(trajectory, breakBlocks)
     
@@ -134,10 +159,10 @@ function traverseTrajectory(trajectory, breakBlocks)
     if (dx ~= 0) then
         orientTurtle(I:mul(sign_x), true)
         for i = 1,math.abs(dx) do
-            if not turtle.forward() then
+            if not forward() then
                 if breakBlocks then
                     turtle.dig()
-                    turtle.forward()
+                    forward()
                 end
             end
         end
@@ -147,10 +172,10 @@ function traverseTrajectory(trajectory, breakBlocks)
     if (dz ~= 0) then
         orientTurtle(K:mul(sign_z), true)
         for i = 1,math.abs(dz) do
-            if not turtle.forward() then
+            if not forward() then
                 if breakBlocks then
                     turtle.dig()
-                    turtle.forward()
+                    forward()
                 end
             end
         end
@@ -159,19 +184,19 @@ function traverseTrajectory(trajectory, breakBlocks)
     -- Move in y
     if (sign_y) > 0 then
         for i = 1,math.abs(dy) do
-            if not turtle.up() then
+            if not up() then
                 if breakBlocks then
                     turtle.digUp()
-                    turtle.up()
+                    up()
                 end
             end
         end
     elseif (sign_y) < 0 then
         for i = 1,math.abs(dy) do
-            if not turtle.down() then
+            if not down() then
                 if breakBlocks then
                     turtle.digDown()
-                    turtle.down()
+                    down()
                 end
             end
         end
