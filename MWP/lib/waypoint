@@ -70,7 +70,7 @@ path = {
                 local stop = coroutine.wrap(function()
 
                     local status = os.pullEvent('stop_' .. self.name)
-                    if status then
+                    if (status == 'stop_' .. self.name) then
                         -- This is a coroutine, when we are done, we want to return something.
                         return 0
                     else
@@ -82,7 +82,7 @@ path = {
                 local pause = coroutine.wrap(function()
                 
                     local status = os.pullEvent('pause_' .. self.name)
-                    if status then
+                    if (status == 'pause_' .. self.name) then
                         self.currentWaypointNumber = 1
                         -- This is a coroutine, when we are done, we want to return something.
                         return 0
