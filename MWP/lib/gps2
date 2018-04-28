@@ -228,7 +228,9 @@ end
 function orientChunk()
     local err, loc = getLocation()
     if not err then
-        goto(vector.new(loc.x % 16, loc.y % 16, loc.z % 16), true)
+        goto(vector.new(loc.x - loc.x % 16,
+                        loc.y - loc.y % 16,
+                        loc.z - loc.z % 16), true)
         orientTurtle(I, true)
         
     end
