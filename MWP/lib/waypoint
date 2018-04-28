@@ -15,7 +15,7 @@ waypoint = {
                 print('Going to waypoint ' .. self.name)
                 print(self.location)
                 previous_location:updateLocation()
-                gps2.goto(self.location, tolerance, breakBlocks)
+                gps2.goto(self.location, breakBlocks, tolerance)
             end
 }
 
