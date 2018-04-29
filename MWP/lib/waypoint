@@ -54,7 +54,7 @@ path = {
                 print('Starting path ' .. self.name)
                 self.currentWaypointNumber = 1
 
-                local begin = coroutine.wrap(function()
+                local begin = function()
 
                     for i = self.currentWaypointNumber, #self.waypoints do
                         -- Now that we jumped to the latest waypoint, we are good
@@ -65,9 +65,9 @@ path = {
                     -- This is a coroutine, when we are done, we want to return something.
                     return 0
 
-                end)
+                end
 
-                local stop = coroutine.wrap(function()
+                local stop = function()
 
                     local status = os.pullEvent('stop_' .. self.name)
                     if (status == 'stop_' .. self.name) then
@@ -77,9 +77,9 @@ path = {
                         coroutine.yield()
                     end
 
-                end)
+                end
 
-                local pause = coroutine.wrap(function()
+                local pause = function()
                 
                     local status = os.pullEvent('pause_' .. self.name)
                     if (status == 'pause_' .. self.name) then
@@ -90,7 +90,7 @@ path = {
                         coroutine.yield()
                     end
 
-                end)
+                end
 
                 -- This uses computercraft's parallel api to traverse the path of waypoints. 
                 --  But if someone calls self.stop(), or self.pause(), then we're done.
