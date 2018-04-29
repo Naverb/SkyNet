@@ -96,7 +96,7 @@ path = {
 
                 -- This uses computercraft's parallel api to traverse the path of waypoints. 
                 --  But if someone calls self.stop(), or self.pause(), then we're done.
-                parallel.waitForAny(begin(),stop(),pause())
+                parallel.waitForAny(begin,stop,pause)
                 print('Finished wait for parallel')
 
             end,
