@@ -61,6 +61,7 @@ path = {
                         self.currentWaypointNumber = i + 1
                         -- We note that go function is sent to gps2, which yields after each block movement.
                         self.waypoints[i]:go(tolerance,breakBlocks)
+                        print('Reached final waypoint of path ' .. self.name)
                     end
                     -- This is a coroutine, when we are done, we want to return something.
                     return 0
