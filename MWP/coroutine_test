@@ -1,0 +1,3 @@
+print(coroutine.running())
+
+coroutine.running()
