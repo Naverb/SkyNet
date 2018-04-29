@@ -64,6 +64,7 @@ path = {
                         print('Reached final waypoint of path ' .. self.name)
                     end
                     -- This is a coroutine, when we are done, we want to return something.
+                    print('Exited the loop')
                     return 0
 
                 end
