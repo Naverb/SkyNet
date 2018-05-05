@@ -60,6 +60,7 @@ path = {
                         -- Now that we jumped to the latest waypoint, we are good
                         self.currentWaypointNumber = i + 1
                         -- We note that go function is sent to gps2, which yields after each block movement.
+                        print('Executing begin. Going to waypoint '.. i .. '. Current coroutine: ' .. coroutine.running())
                         self.waypoints[i]:go(tolerance,breakBlocks)
                         print('Reached final waypoint of path ' .. self.name)
                     end
