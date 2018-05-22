@@ -71,8 +71,10 @@ path = {
 
                 local stop = function()
 
-                    local status = os.pullEvent('stop_' .. self.name)
+                    local status = 'Running stop function' -- os.pullEvent('stop_' .. self.name)
+                    print(status)
                     if (status == 'stop_' .. self.name) then
+                        self.currentWaypointNumber = 1
                         -- This is a coroutine, when we are done, we want to return something.
                         return 0
                     else
@@ -83,9 +85,9 @@ path = {
 
                 local pause = function()
                 
-                    local status = os.pullEvent('pause_' .. self.name)
+                    local status = 'Running pause function' -- os.pullEvent('pause_' .. self.name)
+                        print(status)
                     if (status == 'pause_' .. self.name) then
-                        self.currentWaypointNumber = 1
                         -- This is a coroutine, when we are done, we want to return something.
                         return 0
                     else

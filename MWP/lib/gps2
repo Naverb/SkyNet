@@ -130,17 +130,17 @@ end
 
 local forward = function ()
     print('Executing forward. Current coroutine: ' .. coroutine.running())
-    --coroutine.yield()
+    coroutine.yield()
     return turtle.forward()
 end
 
 local up = function ()
-    --coroutine.yield()
+    coroutine.yield()
     return turtle.up()
 end
 
 local down = function ()
-    --.yield()
+    coroutine.yield()
     return turtle.down()
 end
 
