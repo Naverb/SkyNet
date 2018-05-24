@@ -129,7 +129,7 @@ end
 --      moving a single block. That way, we can deal with event interrupts, etc..
 
 local forward = function ()
-    print('Executing forward. Current coroutine: ' .. coroutine.running())
+    print('Executing forward. Current coroutine: ' .. tostring(coroutine.running()))
     coroutine.yield()
     return turtle.forward()
 end
