@@ -70,29 +70,36 @@ path = {
                 end
 
                 local stop = function()
+                    local eventTrigger = false
 
-                    local status = 'Running stop function' -- os.pullEvent('stop_' .. self.name)
-                    print(status)
-                    if (status == 'stop_' .. self.name) then
-                        self.currentWaypointNumber = 1
-                        -- This is a coroutine, when we are done, we want to return something.
-                        return 0
-                    else
-                        coroutine.yield()
+                    while !eventTrigger do
+                        local status = 'Running stop function' -- os.pullEvent('stop_' .. self.name)
+                        print(status)
+                        if (status == 'stop_' .. self.name) then
+                            self.currentWaypointNumber = 1
+                            eventTrigger = true
+                        else
+                            coroutine.yield()
+                        end
                     end
-
+                    -- This is a coroutine, when we are done, we want to return something.
+                    return 0
                 end
 
                 local pause = function()
-                
-                    local status = 'Running pause function' -- os.pullEvent('pause_' .. self.name)
-                        print(status)
-                    if (status == 'pause_' .. self.name) then
-                        -- This is a coroutine, when we are done, we want to return something.
-                        return 0
-                    else
-                        coroutine.yield()
+                    local eventTrigger = false
+                    
+                    while !eventTrigger do
+                        local status = 'Running pause function' -- os.pullEvent('pause_' .. self.name)
+                            print(status)
+                        if (status == 'pause_' .. self.name) then
+                            eventTrigger = true
+                        else
+                            coroutine.yield()
+                        end
                     end
+                    -- This is a coroutine, when we are done, we want to return something.
+                    return 0
 
                 end
 
