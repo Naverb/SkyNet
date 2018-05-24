@@ -72,7 +72,9 @@ path = {
                 local stop = function()
                     local eventTrigger = false
 
-                    while !eventTrigger do
+                    while not eventTrigger do
+                        -- It appears that os.pullEvent blocks the entire thread. Maybe we want os.pullEvent() without
+                        --  any arguments. That way, the computer can carry on without waiting for stop_ or pause_.
                         local status = 'Running stop function' -- os.pullEvent('stop_' .. self.name)
                         print(status)
                         if (status == 'stop_' .. self.name) then
@@ -89,7 +91,7 @@ path = {
                 local pause = function()
                     local eventTrigger = false
                     
-                    while !eventTrigger do
+                    while not eventTrigger do
                         local status = 'Running pause function' -- os.pullEvent('pause_' .. self.name)
                             print(status)
                         if (status == 'pause_' .. self.name) then
