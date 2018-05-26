@@ -72,18 +72,16 @@ path = {
                 local stop = function()
                     local eventTrigger = false
 
-                    while not eventTrigger do
+                   repeat
                         -- It appears that os.pullEvent blocks the entire thread. Maybe we want os.pullEvent() without
                         --  any arguments. That way, the computer can carry on without waiting for stop_ or pause_.
-                        local status = 'Running stop function' -- os.pullEvent('stop_' .. self.name)
+                        local status = os.pullEvent()
                         print(status)
                         if (status == 'stop_' .. self.name) then
                             self.currentWaypointNumber = 1
                             eventTrigger = true
-                        else
-                            coroutine.yield()
                         end
-                    end
+                    until eventTrigger
                     -- This is a coroutine, when we are done, we want to return something.
                     return 0
                 end
@@ -91,15 +89,13 @@ path = {
                 local pause = function()
                     local eventTrigger = false
                     
-                    while not eventTrigger do
-                        local status = 'Running pause function' -- os.pullEvent('pause_' .. self.name)
-                            print(status)
+                    repeat
+                        local status = os.pullEvent()
+                        print(status)
                         if (status == 'pause_' .. self.name) then
                             eventTrigger = true
-                        else
-                            coroutine.yield()
                         end
-                    end
+                    until eventTrigger
                     -- This is a coroutine, when we are done, we want to return something.
                     return 0
 
