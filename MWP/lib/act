@@ -1,32 +1,20 @@
 os.loadAPI('SkyNet/MWP/lib/gps2')
 
--- actions is a function that defines the things executed by this new action
-function new_Action(actions)
-
-    local metadata = {
-        do = function(self)
-                
-        end;
-        
-    }
-
-    return metadata
-end
-
-
-
 -- These will be the coordinates of the fueling station
 fuelingStation = vector.new(0,0,0)
 
-function refuelMonitor()
+local function refuelIfNecessary()
     local fuelRange = turtle.getFuelLevel()
     local displacementToStation = gps2.getTrajectory(fuelingStation)
     -- This is the distance in the blocks the turtle must travel to get to the fueling station
     local distanceToStation = Math.abs(displacementToStation.x) + Math.abs(displacementToStation.y) + Math.abs(displacementToStation.z)
 
-    if ( (fuelRange - distanceToStation) < 25) then
+    if ( (fuelRange - distanceToStation) < 25 and (fuelRange - distanceToStation) > 0)then
         -- We want to breakBlocks = true
-        gps2.goto(fuelingStation, true)
+        -- gps2.goto(fuelingStation, true)
+        print('I AM GOING TO GET FUEL')
+        -- We return true because we have reached the refuelling station (hopefully)
+        return true
     elseif ( (fuelRange - distanceToStation) <= 0) then
         -- We don't have enough fuel to return home
         -- We probably want to write code to notify a turtle to bring fuel
@@ -35,4 +23,8 @@ function refuelMonitor()
 
     -- Now we write code here to check if any adjacent blocks have fuel
 
+end
+
+function refuelMonitor()
+    repeat coroutine.yield() until refuelIfNecessary()
 end

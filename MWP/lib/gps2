@@ -26,6 +26,7 @@ function getOrientation(localMode)
 
         -- We note that getting location non-locally costs fuel, so before we do anything, we yield the process
             -- to check whether we have sufficient fuel.
+        os.queueEvent('turtle_move_calculate')
         coroutine.yield()
         
         local err, loc1 = getLocation()
@@ -129,17 +130,21 @@ end
 --      moving a single block. That way, we can deal with event interrupts, etc..
 
 local forward = function ()
-    print('Executing forward. Current coroutine: ' .. tostring(coroutine.running()))
+    -- We queue these events so that when we call os.pullEvent later, we don't have the code blocked up.
+    -- It also makes easier to track these events and intercept them for multitasking.
+    os.queueEvent('turtle_move_forward')
     coroutine.yield()
     return turtle.forward()
 end
 
 local up = function ()
+    os.queueEvent('turtle_move_up')
     coroutine.yield()
     return turtle.up()
 end
 
 local down = function ()
+    os.queueEvent('turtle_move_down')
     coroutine.yield()
     return turtle.down()
 end
@@ -223,6 +228,7 @@ function goto(destination, _breakBlocks, _tolerance)
         end
 
     until trajectory:length() < tolerance
+
     -- FIX ME until trajectory:round():length() < tolerance
 end
 

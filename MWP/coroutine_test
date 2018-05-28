@@ -1,3 +1,30 @@
-print(coroutine.running())
+function a()
+    repeat
+        write('a')
+        coroutine.yield()
+    until false
+end
 
-coroutine.yield()
+function b()
+    repeat
+        write('b')
+        coroutine.yield()
+    until false
+end
+
+function c()
+    repeat
+        write('c')
+        coroutine.yield()
+    until false
+end
+
+function d()
+    repeat
+        write('d')
+        coroutine.yield()
+    until false
+end
+
+parallel.waitForAny(a,b,c,d)
+

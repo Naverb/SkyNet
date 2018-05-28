@@ -4,7 +4,7 @@ os.loadAPI(LIB_GPS_PATH)
 
 waypoint = {
     updateLocation = function(self, newLocation)
-                        local err, loc = (false, newLocation) or gps2.getLocation()
+                        local err, loc = false, newLocation or gps2.getLocation()
                         if not err then
                             self.location = loc
                         else
@@ -51,7 +51,6 @@ path = {
             end,
     start = function(self, tolerance, breakBlocks)
 
-                print('Starting path ' .. self.name)
                 self.currentWaypointNumber = 1
 
                 local begin = function()
@@ -60,50 +59,28 @@ path = {
                         -- Now that we jumped to the latest waypoint, we are good
                         self.currentWaypointNumber = i + 1
                         -- We note that go function is sent to gps2, which yields after each block movement.
-                        print('Executing begin. Going to waypoint '.. i .. '. Current coroutine: ' .. tostring(coroutine.running()))
                         self.waypoints[i]:go(tolerance,breakBlocks)
-                        print('Reached final waypoint of path ' .. self.name)
                     end
-                    -- This is a coroutine, when we are done, we want to return something.
-                    return 0
-
                 end
 
                 local stop = function()
                     local eventTrigger = false
 
                    repeat
-                        -- It appears that os.pullEvent blocks the entire thread. Maybe we want os.pullEvent() without
-                        --  any arguments. That way, the computer can carry on without waiting for stop_ or pause_.
                         local status = os.pullEvent()
-                        print(status)
                         if (status == 'stop_' .. self.name) then
                             self.currentWaypointNumber = 1
                             eventTrigger = true
-                        end
-                    until eventTrigger
-                    -- This is a coroutine, when we are done, we want to return something.
-                    return 0
-                end
-
-                local pause = function()
-                    local eventTrigger = false
-                    
-                    repeat
-                        local status = os.pullEvent()
-                        print(status)
-                        if (status == 'pause_' .. self.name) then
+                        elseif (status == 'pause_' .. self.name) then
                             eventTrigger = true
                         end
                     until eventTrigger
-                    -- This is a coroutine, when we are done, we want to return something.
-                    return 0
-
                 end
+
 
                 -- This uses computercraft's parallel api to traverse the path of waypoints. 
                 --  But if someone calls self.stop(), or self.pause(), then we're done.
-                parallel.waitForAny(begin,stop,pause)
+                parallel.waitForAny(begin,stop)
 
             end,
     stop = function(self)
