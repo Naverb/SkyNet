@@ -1,7 +1,65 @@
 os.loadAPI('SkyNet/MWP/lib/gps2')
+os.loadAPI('SkyNet/MWP/lib/waypoint')
+
+function listener:new(task, event) = {
+    -- This is the constructor for the listener object. It yields until event() returns true.
+    -- then task(...) is called, passing the parameters returned by event().
+    local obj = {
+        listen = function(this)
+            local eventData = nil
+            this.hasTriggered = false
+            repeat
+                coroutine.yield()
+                eventData = table.pack(event())
+            until eventData[1]
+            this.hasTriggered = true
+            return task( table.unpack(eventData,2) )
+        end,
+
+        listenPerpetually = function(this)
+            repeat listen(this) until false
+        end,
+
+        hasTriggered = false
+    }
+    setmetatable(obj, self)
+    self.__index = self
+
+    return obj
+}
 
 -- These will be the coordinates of the fueling station
-fuelingStation = vector.new(-145,92,375)
+fuelingStation = waypoint.waypoint:new('fuelingStation', vector.new(-145,92,375))
+
+local function getFuel(sufficientRange, delta)
+
+    if sufficientRange then
+        -- We want to breakBlocks = true
+        fuelingStation:go(1, true)
+
+        for i=1,16 do
+            local itemCount = turtle.getItemCount(i)
+            if itemCount == 0 then
+                turtle.select(i)
+                break
+            elseif i >= 16 and itemCount ~= 0 then
+                turtle.select(16)
+                turtle.dropDown()
+            end
+        end
+
+        local err = turtle.suckDown(16)
+        if not err then
+            turtle.refuel(16)
+            waypoint.previous_location:go(1, true)
+        end
+
+    else
+        -- We probably want to write code to notify a turtle to bring fuel
+        print('Insufficient fuel to return home. Difference: ' .. delta)
+    end
+
+end
 
 local function refuelIfNecessary()
     local fuelRange = turtle.getFuelLevel()
@@ -10,26 +68,42 @@ local function refuelIfNecessary()
     local distanceToStation = math.abs(displacementToStation.x) + math.abs(displacementToStation.y) + math.abs(displacementToStation.z)
 
     if ( (fuelRange - distanceToStation) < 25 and (fuelRange - distanceToStation) > 0)then
-        -- We want to breakBlocks = true
-        gps2.goto(fuelingStation, true)
-
-        -- Now we write code here to check if any adjacent blocks have fuel
-
-
-        -- We return true because we have reached the refuelling station (hopefully)
-        return true
+        -- We return true because we need to go to the refuelling station
+        return true, true
     elseif ( (fuelRange - distanceToStation) <= 0) then
         -- We don't have enough fuel to return home
-        -- We probably want to write code to notify a turtle to bring fuel
-        print('Insufficient fuel to return home. Difference: ' .. (fuelRange - distanceToStation))
+        local delta = fuelRange - displacementToStation
+        return true, false, delta
     end
 
     -- Unless we return true above, we have not reached a fueling station, so we return false.
     return false
 end
 
-function refuelMonitor()
-    repeat
-        coroutine.yield() 
-    until refuelIfNecessary()
+storageDepot = waypoint.waypoint:new( 'storageDepot',vector.new(0,0,0) )
+
+local function storeAllItems()
+    storageDepot:go(1, false)
+
+    for i = 1,16 do
+        turtle.dropDown()
+    end
+
+    waypoint.previous_location:go(1,false)
 end
+
+local function storeAllItemsEvent()
+    for i=1,16 do
+        local itemCount = turtle.getItemCount(i)
+        if itemCount == 0 then
+            break
+        elseif i >= 16 and itemCount ~= 0 then
+            return true
+        end
+    end
+
+    return false
+end
+
+refuelMonitor = listener:new(getFuel, refuelIfNecessary)
+storageMonitor = listener:new(storeAllItems, storeAllItemsEvent)

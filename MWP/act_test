@@ -27,4 +27,4 @@ function startPath()
     repeat path:start(1,false) until false
 end
 
-parallel.waitForAny(startPath, act.refuelMonitor)
+parallel.waitForAny(startPath, act.refuelMonitor:listen)

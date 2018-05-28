@@ -1,0 +1,24 @@
+os.loadAPI("SkyNet/MWP/lib/waypoint")
+os.loadAPI("SkyNet/MWP/lib/gps2")
+os.loadAPI("SkyNet/MWP/lib/act")
+os.loadAPI("SkyNet/MWP/lib/quarry_api")
+
+quarryCorner = vector.new(-114,91,359)
+
+point1 = waypoint.waypoint:new('point1',quarryCorner)
+
+path = waypoint.path:new('potato')
+path:append(point1)
+
+function startPath()
+    path:start(1,false)
+end
+parallel.waitForAny(startPath, act.refuelMonitor:listen)
+
+--Now let's start making that quarry
+
+function quarry()
+    quarry_api.makeQuarry(10,5,5)
+end
+
+parallel.waitForAny(quarry, act.refuelMonitor:listenPerpetually, act.storageMonitor:listenPerpetually)

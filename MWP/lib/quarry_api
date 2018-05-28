@@ -1,23 +1,58 @@
 os.loadAPI("SkyNet/MWP/lib/gps2")
 
+function up()
+    turtle.up()
+    coroutine.yield()
+end
+
+function down()
+    turtle.down()
+    coroutine.yield()
+end
+
+function forward()
+    turtle.forward()
+    coroutine.yield()
+end
+
+
 function digDownUp(height)
     for i=1, height - 5 do --bedrock layer is 0-4
         turtle.digDown()
-        turtle.down()
+        down()
     end
     turtle.dig()
-    turtle.forward()
+    forward()
     for i=1, height - 5 do --bedrock layer is 0-4
         turtle.digUp()
-        turtle.up()
+        up()
     end
 end
 
-function quarryLine(height)
-    for i=1,7 do   
+function quarryLine(height, sideWidth)
+    local width = sideWidth or 7
+    for i=1,width do   
         digDownUp(height)
         turtle.dig()
-        turtle.forward()
+        forward()
     end
     digDownUp()
+end
+
+function makeQuarry(height, sideLength, sideWidth)
+    length = sideLength or 7
+    width = sideWidth or 7
+
+    for i=1,length do   
+        quarryLine(height, width)
+        turtle.turnRight()
+        turtle.dig()
+        forward()
+        turtle.turnRight()
+        quarryLine(height, width)
+        turtle.turnLeft()
+        turtle.dig()
+        forward()
+        turtle.turnLeft()
+    end
 end
