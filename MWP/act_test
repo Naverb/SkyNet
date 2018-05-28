@@ -24,7 +24,7 @@ path:append(point4)
 -- path:append(home)
 
 function startPath()
-    path:start(1,false)
+    repeat path:start(1,false) until false
 end
 
-parallel.waitForAny(path:start(1,false), act.refuelMonitor)
+parallel.waitForAny(startPath, act.refuelMonitor)

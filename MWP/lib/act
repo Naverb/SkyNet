@@ -1,18 +1,21 @@
 os.loadAPI('SkyNet/MWP/lib/gps2')
 
 -- These will be the coordinates of the fueling station
-fuelingStation = vector.new(0,0,0)
+fuelingStation = vector.new(-145,92,375)
 
 local function refuelIfNecessary()
     local fuelRange = turtle.getFuelLevel()
-    local displacementToStation = gps2.getTrajectory(fuelingStation)
+    local err, displacementToStation = gps2.getTrajectory(fuelingStation)
     -- This is the distance in the blocks the turtle must travel to get to the fueling station
-    local distanceToStation = Math.abs(displacementToStation.x) + Math.abs(displacementToStation.y) + Math.abs(displacementToStation.z)
+    local distanceToStation = math.abs(displacementToStation.x) + math.abs(displacementToStation.y) + math.abs(displacementToStation.z)
 
     if ( (fuelRange - distanceToStation) < 25 and (fuelRange - distanceToStation) > 0)then
         -- We want to breakBlocks = true
-        -- gps2.goto(fuelingStation, true)
-        print('I AM GOING TO GET FUEL')
+        gps2.goto(fuelingStation, true)
+
+        -- Now we write code here to check if any adjacent blocks have fuel
+
+
         -- We return true because we have reached the refuelling station (hopefully)
         return true
     elseif ( (fuelRange - distanceToStation) <= 0) then
@@ -21,10 +24,12 @@ local function refuelIfNecessary()
         print('Insufficient fuel to return home. Difference: ' .. (fuelRange - distanceToStation))
     end
 
-    -- Now we write code here to check if any adjacent blocks have fuel
-
+    -- Unless we return true above, we have not reached a fueling station, so we return false.
+    return false
 end
 
 function refuelMonitor()
-    repeat coroutine.yield() until refuelIfNecessary()
+    repeat
+        coroutine.yield() 
+    until refuelIfNecessary()
 end
