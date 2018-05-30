@@ -17,13 +17,14 @@ end
 
 
 function digDownUp(height)
-    for i=1, height - 5 do --bedrock layer is 0-4
+
+    print(height)
+
+    for i=1, height do 
         turtle.digDown()
         down()
     end
-    turtle.dig()
-    forward()
-    for i=1, height - 5 do --bedrock layer is 0-4
+    for i=1, height do 
         turtle.digUp()
         up()
     end
@@ -31,6 +32,10 @@ end
 
 function quarryLine(height, sideWidth)
     local width = sideWidth or 7
+
+    print(width)
+    print(height)
+
     for i=1,width do   
         digDownUp(height)
         turtle.dig()
@@ -42,6 +47,10 @@ end
 function makeQuarry(height, sideLength, sideWidth)
     length = sideLength or 7
     width = sideWidth or 7
+
+    print(length)
+    print(width)
+    print(height)
 
     for i=1,length do   
         quarryLine(height, width)

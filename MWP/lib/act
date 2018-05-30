@@ -1,35 +1,39 @@
 os.loadAPI('SkyNet/MWP/lib/gps2')
 os.loadAPI('SkyNet/MWP/lib/waypoint')
 
-function listener:new(task, event) = {
+listener = {
+    listen = function(self)
+        local eventData = {}
+        self.hasTriggered = false
+        repeat
+            coroutine.yield()
+            eventData = table.pack(self.event())
+        until eventData[1]
+        self.hasTriggered = true
+        return self.task( table.unpack(eventData,2) )
+    end,
+
+    listenPerpetually = function(self)
+        repeat self:listen() until false
+    end
+}
+
+function listener:new(_task, _event)
     -- This is the constructor for the listener object. It yields until event() returns true.
     -- then task(...) is called, passing the parameters returned by event().
     local obj = {
-        listen = function(this)
-            local eventData = nil
-            this.hasTriggered = false
-            repeat
-                coroutine.yield()
-                eventData = table.pack(event())
-            until eventData[1]
-            this.hasTriggered = true
-            return task( table.unpack(eventData,2) )
-        end,
-
-        listenPerpetually = function(this)
-            repeat listen(this) until false
-        end,
-
+        event = _event,
+        task = _task,
         hasTriggered = false
     }
     setmetatable(obj, self)
     self.__index = self
 
     return obj
-}
+end
 
 -- These will be the coordinates of the fueling station
-fuelingStation = waypoint.waypoint:new('fuelingStation', vector.new(-145,92,375))
+fuelingStation = waypoint.waypoint:new('fuelingStation', vector.new(-145,93,375))
 
 local function getFuel(sufficientRange, delta)
 
@@ -63,7 +67,8 @@ end
 
 local function refuelIfNecessary()
     local fuelRange = turtle.getFuelLevel()
-    local err, displacementToStation = gps2.getTrajectory(fuelingStation)
+    local err, displacementToStation = gps2.getTrajectory(fuelingStation.location)
+    
     -- This is the distance in the blocks the turtle must travel to get to the fueling station
     local distanceToStation = math.abs(displacementToStation.x) + math.abs(displacementToStation.y) + math.abs(displacementToStation.z)
 
@@ -72,7 +77,7 @@ local function refuelIfNecessary()
         return true, true
     elseif ( (fuelRange - distanceToStation) <= 0) then
         -- We don't have enough fuel to return home
-        local delta = fuelRange - displacementToStation
+        local delta = fuelRange - distanceToStation
         return true, false, delta
     end
 

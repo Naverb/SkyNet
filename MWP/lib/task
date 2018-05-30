@@ -1,0 +1,105 @@
+-- This is the API dedicated to handling events, listeners, and the event queue.
+
+listener = {
+
+    name = 'untitled_task',
+
+    condition = function ()
+        -- This function is called by self:listen().
+            -- This function should check for a certain condition. If the
+            -- conditions are satisfied, this should return true, else return false.
+        return false
+    end,
+
+    listen_coroutine = coroutine.create(function (self)
+        -- This function is called by the task handler
+        if self.condition() and self.enabled == true then
+            self.executeTask()
+        else
+            coroutine.yield(true)
+        end
+    end),
+
+    listen = function (self)
+        return coroutine.resume(self.listen_coroutine, self)
+    end,
+
+    executeTask = function ()
+        -- This function is called by self:listen() when condition returns true.
+    end,
+
+}
+
+function listener:new(_name, _conditon, _task)
+    local obj = {
+        status = 'new',
+        enabled = true,
+        name = _name,
+
+        condition = _conditon,
+        executeTask = _task
+    }
+
+    setmetatable(obj, self)
+    self.__index = self
+
+    return obj
+end
+
+taskHandler = {
+
+    name = 'untitled_task_handler'
+
+    listeners = {},
+
+    intermediateTask = function ()
+        -- This function is ran after each time a listener yields. This may be the key to running critical events or nesting event listeners.
+    end,
+
+    addListener = function(self, listener)
+        self.listeners[listener.name] = listener
+    end,
+
+    removeListener = function(self, listener)
+        if self.listeners[listener.name] then
+            self.listeners[listener.name] = nil
+        end
+    end,
+    
+
+    start = function(self)
+        self.enabled = true
+
+        while self.enabled do
+            -- Here we cycle through all events in this taskHandler.
+            for listenerName, listener in pairs(self.listeners) do
+                listener:listen()
+
+                if coroutine.status(listener.listen_coroutine) == 'dead' then
+                    self.listeners[listenerName] = nil
+                end
+
+                self.intermediateTask()
+            end
+        end
+    end,
+
+    stop = function(self)
+        self.enabled = false
+    end
+}
+
+function taskHandler:new( _listeners, _intermediateTask, _name)
+    local obj = {
+        name = _name
+        enabled = false,
+        listeners = _listeners,
+        intermediateTask = _intermediateTask
+
+    }
+
+    setmetatable(obj, self)
+    self.__index = self
+
+    return obj
+end
