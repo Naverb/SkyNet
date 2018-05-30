@@ -72,21 +72,24 @@ taskHandler = {
         end
     end,
     
+    run = function(self)
+        -- Here we cycle through all events in this taskHandler.
+        for listenerName, listener in pairs(self.listeners) do
+            listener:listen()
+
+            if coroutine.status(listener.listen_coroutine) == 'dead' then
+                self.listeners[listenerName] = nil
+            end
+
+            self.intermediateTask()
+        end
+    end,
 
     start = function(self)
         self.enabled = true
 
         while self.enabled do
-            -- Here we cycle through all events in this taskHandler.
-            for listenerName, listener in pairs(self.listeners) do
-                listener:listen()
-
-                if coroutine.status(listener.listen_coroutine) == 'dead' then
-                    self.listeners[listenerName] = nil
-                end
-
-                self.intermediateTask()
-            end
+            self:run()
         end
     end,
 
