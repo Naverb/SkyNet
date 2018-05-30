@@ -11,11 +11,12 @@ listener = {
         return false
     end,
 
-    listen_coroutine = coroutine.create(function (self)
+    listen_coroutine = coroutine.create(function (self, ...)
         -- This function is called by the task handler
         repeat
             if self.condition() and self.enabled == true then
-                self.executeTask()
+                self.status = 'triggered'
+                self.executeTask(...)
             else
                 coroutine.yield(true)
             end
@@ -25,22 +26,23 @@ listener = {
         until self.terminate == true
     end),
 
-    listen = function (self)
-        return coroutine.resume(self.listen_coroutine, self)
+    listen = function (self, ...)
+        self.status = 'listening'
+        return coroutine.resume(self.listen_coroutine, self, ...)
     end,
 
-    executeTask = function ()
+    executeTask = function (...)
         -- This function is called by self:listen() when condition returns true.
     end,
 
 }
 
-function listener:new(_name, _conditon, _task)
+function listener:new(_name, _conditon, _task, runOnce)
     local obj = {
         status = 'new',
         enabled = true,
         name = _name,
-        terminate = false,
+        terminate = runOnce or false,
 
         condition = _conditon,
         executeTask = _task
@@ -111,4 +113,23 @@ function taskHandler:new( _listeners, _intermediateTask, _name)
     self.__index = self
 
     return obj
+end
+
+function noYield(func)
+    -- Takes a function that calls coroutine.yield() and continues resuming the function so that
+    -- to ignore coroutine.yield().
+
+    if type(func) == 'coroutine' then
+        local co = func
+    elseif type(func) == 'function' then
+        local co = coroutine.create(func)
+    else
+        error('noYield needs either a coroutine or function as an argument!')
+    end
+
+    repeat
+        local status = coroutine.resume(co)
+    until coroutine.status(co) == 'dead'
+
+    return status
 end
