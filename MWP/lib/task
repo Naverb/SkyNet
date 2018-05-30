@@ -83,7 +83,11 @@ taskHandler = {
 
             self.intermediateTask()
         end
+<<<<<<< HEAD
     end,
+=======
+    end
+>>>>>>> 041c67c2dbb2ac130e508807870a91b671d9a005
 
     start = function(self)
         self.enabled = true
