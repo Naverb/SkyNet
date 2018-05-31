@@ -8,15 +8,15 @@ listener = {
         -- This function is called by self:listen().
             -- This function should check for a certain condition. If the
             -- conditions are satisfied, this should return true, else return false.
-        return false
+        return true
     end,
 
     listen_coroutine = coroutine.create(function (self, ...)
         -- This function is called by the task handler
         repeat
-            if self.condition() and self.enabled == true then
+            if self.condition(self) and self.enabled == true then
                 self.status = 'triggered'
-                self.executeTask(...)
+                self.executeTask(self, ...)
             else
                 coroutine.yield(true)
             end
@@ -31,7 +31,7 @@ listener = {
         return coroutine.resume(self.listen_coroutine, self, ...)
     end,
 
-    executeTask = function (...)
+    executeTask = function (self, ...)
         -- This function is called by self:listen() when condition returns true.
     end,
 
@@ -60,7 +60,7 @@ taskHandler = {
 
     listeners = {},
 
-    intermediateTask = function ()
+    intermediateTask = function (self)
         -- This function is ran after each time a listener yields. This may be the key to running critical events or nesting event listeners.
     end,
 
@@ -83,7 +83,7 @@ taskHandler = {
                 self.listeners[listenerName] = nil
             end
 
-            self.intermediateTask()
+            self:intermediateTask()
         end
     end,
 
@@ -127,9 +127,11 @@ function noYield(func)
         error('noYield needs either a coroutine or function as an argument!')
     end
 
-    repeat
-        local status = coroutine.resume(co)
-    until coroutine.status(co) == 'dead'
+    local noYieldFunction = function (...)
+        repeat
+            local status = coroutine.resume(co, ...)
+        until coroutine.status(co) == 'dead'
+    end
 
-    return status
+    return noYieldFunction
 end

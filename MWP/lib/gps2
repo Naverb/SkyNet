@@ -1,10 +1,17 @@
-I = vector.new(1,0,0)
-J = vector.new(0,1,0)
-K = vector.new(0,0,1)
+local I = vector.new(1,0,0)
+local J = vector.new(0,1,0)
+local K = vector.new(0,0,1)
+
+os.loadAPI('SkyNet/MWP/lib/task')
+
+
 
 -- Get location of computer using rednet
 function getLocation()
-    local loc = vector.new(gps.locate(5))
+    -- We note that gps.locate is based on the rednet API, which runs coroutine.yield.
+    --  Hence, we tell the system to run this line without yielding (see task.noYield),
+    --  because we do not want to yield all of getLocation() in the middle of a task.s
+    local loc = vector.new(task.noYield(gps.locate)(5))
     if not loc then
         return true, nil
         -- We return error = true and loc = nil
@@ -24,10 +31,9 @@ function getOrientation(localMode)
 
     if not localMode then
 
-        -- We note that getting location non-locally costs fuel, so before we do anything, we yield the process
-            -- to check whether we have sufficient fuel.
-        os.queueEvent('turtle_move_calculate')
-        coroutine.yield()
+        -- We yield here becaue non-local getOrientation requires fuel, so yielding allows a taskHandler
+        -- to pass execution to a fuel checker listener if we want to.
+        coroutine.yield('check_fuel')
         
         local err, loc1 = getLocation()
         -- Now we'll move the turtle
@@ -130,22 +136,17 @@ end
 --      moving a single block. That way, we can deal with event interrupts, etc..
 
 local forward = function ()
-    -- We queue these events so that when we call os.pullEvent later, we don't have the code blocked up.
-    -- It also makes easier to track these events and intercept them for multitasking.
-    os.queueEvent('turtle_move_forward')
-    coroutine.yield()
+    coroutine.yield('turtle_move_forward')
     return turtle.forward()
 end
 
 local up = function ()
-    os.queueEvent('turtle_move_up')
-    coroutine.yield()
+    coroutine.yield('turtle_move_up')
     return turtle.up()
 end
 
 local down = function ()
-    os.queueEvent('turtle_move_down')
-    coroutine.yield()
+    coroutine.yield('turtle_move_down')
     return turtle.down()
 end
 

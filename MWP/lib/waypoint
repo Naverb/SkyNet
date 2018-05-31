@@ -49,6 +49,10 @@ path = {
     pop = function(self)
                 table.remove(self.waypoints)
             end,
+
+    taskHandler = {},
+    path_task_listener = {},
+
     start = function(self, tolerance, breakBlocks)
 
                 self.currentWaypointNumber = 1
@@ -92,11 +96,45 @@ path = {
 }
 
 function path:new(_name, _waypoints)
+    
+    local _path_task_listener = task.listener:new(
+        
+        _name, 
+
+        function (self)
+            -- This allows us to disable the listener by merely disabling
+            -- the path's taskHandler.
+            return self.taskHandler.enabled
+        end,
+
+        function (self)
+            -- We note that go function is sent to gps2, which yields after each block movement.
+            self.waypoints[self.nextWaypointNumber]:go(tolerance,breakBlocks)
+            self.nextWaypointNumber = self.nextWaypointNumber + 1
+        end
+    )
+
+    local _taskHandler = task.taskHandler:new(
+            
+        
+        _path_task_listener,
+
+        function(self)
+            -- We temporarily pass execution to the parent of the path.
+            -- There, we can check if we need to refuel, etc.
+            coroutine.yield()
+        end,
+
+        _name
+    )
+    
     local obj = {
         name = _name or "untitled_path",
         waypoints = _waypoints or {},
-        -- If the path was paused, this is nonzero.
-        currentWaypointNumber = 1
+        -- If the path was paused, this is > 1.
+        nextWaypointNumber = 1,
+        path_task_listener = _path_task_listener,
+        taskHandler = _taskHandler
     }
     setmetatable(obj,self)
     self.__index = self
