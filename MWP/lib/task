@@ -41,7 +41,7 @@ function listener:new(_name, _conditon, _task, runOnce)
     local obj = {
         status = 'new',
         enabled = true,
-        name = _name,
+        name = _name or 'untitled_listener',
         terminate = runOnce or false,
 
         condition = _conditon,
@@ -74,10 +74,10 @@ taskHandler = {
         end
     end,
     
-    run = function(self)
+    run = function(self, ...)
         -- Here we cycle through all events in this taskHandler.
         for listenerName, listener in pairs(self.listeners) do
-            listener:listen()
+            listener:listen(...)
 
             if coroutine.status(listener.listen_coroutine) == 'dead' then
                 self.listeners[listenerName] = nil
@@ -87,11 +87,11 @@ taskHandler = {
         end
     end,
 
-    start = function(self)
+    start = function(self, ...)
         self.enabled = true
 
         while self.enabled do
-            self:run()
+            self:run(...)
         end
     end,
 
@@ -102,7 +102,7 @@ taskHandler = {
 
 function taskHandler:new( _listeners, _intermediateTask, _name)
     local obj = {
-        name = _name
+        name = _name or 'untitled_task_handler'
         enabled = false,
         listeners = _listeners,
         intermediateTask = _intermediateTask

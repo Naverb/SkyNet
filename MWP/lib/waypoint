@@ -56,42 +56,14 @@ path = {
     start = function(self, tolerance, breakBlocks)
 
                 self.currentWaypointNumber = 1
-
-                local begin = function()
-
-                    for i = self.currentWaypointNumber, #self.waypoints do
-                        -- Now that we jumped to the latest waypoint, we are good
-                        self.currentWaypointNumber = i + 1
-                        -- We note that go function is sent to gps2, which yields after each block movement.
-                        self.waypoints[i]:go(tolerance,breakBlocks)
-                    end
-                end
-
-                local stop = function()
-                    local eventTrigger = false
-
-                   repeat
-                        local status = os.pullEvent()
-                        if (status == 'stop_' .. self.name) then
-                            self.currentWaypointNumber = 1
-                            eventTrigger = true
-                        elseif (status == 'pause_' .. self.name) then
-                            eventTrigger = true
-                        end
-                    until eventTrigger
-                end
-
-
-                -- This uses computercraft's parallel api to traverse the path of waypoints. 
-                --  But if someone calls self.stop(), or self.pause(), then we're done.
-                parallel.waitForAny(begin,stop)
-
+                self.taskHandler:start(tolerance, breakBlocks)
+                
             end,
-    stop = function(self)
-                os.queueEvent('stop_' .. self.name)
+    disable = function(self)
+                self.taskHandler.enabled = false
             end,
-    pause = function(self)
-                os.queueEvent('pause_' .. self.name)
+    enable = function(self)
+                self.taskHandler.enabled = true
             end
 }
 
@@ -107,9 +79,9 @@ function path:new(_name, _waypoints)
             return self.taskHandler.enabled
         end,
 
-        function (self)
+        function (self, ...)
             -- We note that go function is sent to gps2, which yields after each block movement.
-            self.waypoints[self.nextWaypointNumber]:go(tolerance,breakBlocks)
+            self.waypoints[self.nextWaypointNumber]:go(...)
             self.nextWaypointNumber = self.nextWaypointNumber + 1
         end
     )
