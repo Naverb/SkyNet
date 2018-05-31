@@ -71,15 +71,15 @@ function path:new(_name, _waypoints)
 
 
     local _path_task_listener = task.listener:new(
-
+        --NAME
         _name,
-
+        --CONDITION
         function (self)				-- FIXME: SHADOWING UPVALUE DEFINED ABOVE
             -- This allows us to disable the listener by merely disabling
             -- the path's taskHandler.
             return self.taskHandler.enabled
         end,
-
+        --EXECUTETASK
         function (self, ...)		-- FIXME: SHADOWING UPVALUE DEFINED ABOVE
             -- We note that go function is sent to gps2, which yields after each block movement.
             self.waypoints[self.nextWaypointNumber]:go(...)
@@ -88,15 +88,17 @@ function path:new(_name, _waypoints)
     )
 
     local _taskHandler = task.taskHandler:new(
-
-        _path_task_listener,
-
+        --LISTENERS (there is only one listener in this case)
+        {
+            _name = _path_task_listener
+        },
+        --INTERMEDIATETASK
         function(self)				-- FIXME: SHADOWING UPVALUE DEFINED ABOVE
             -- We temporarily pass execution to the parent of the path.
             -- There, we can check if we need to refuel, etc.
             coroutine.yield()
         end,
-
+        --NAME
         _name
     )
 

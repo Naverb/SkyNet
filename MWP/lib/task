@@ -1,7 +1,10 @@
--- This is the API dedicated to handling events, listeners, and the event queue.
-	-- Why is the API not called "events" then? -BREVAN
+-- This is the API dedicated to handling tasks, listeners, and the tasks queue.
+    -- Why is the API not called "events" then? -BREVAN
+        -- Ssshhhhhhhh - Anthony
 
 -- FIXME? Should we consolidate the code from act into this?
+    -- No. The act code is deprecated. We need to rewrite our
+    -- fuel listeners and storage listeners into the new paradigm. - Anthony
 
 local listener = {
 
@@ -131,8 +134,9 @@ local function noYield(func)
     end
 
     local noYieldFunction = function (...)
+        local status
         repeat
-            local status = coroutine.resume(co, ...)
+            status = coroutine.resume(co, ...)
         until coroutine.status(co) == 'dead'
     end
 
