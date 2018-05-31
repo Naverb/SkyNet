@@ -1,13 +1,19 @@
-local I = vector.new(1,0,0)
-local J = vector.new(0,1,0)
-local K = vector.new(0,0,1)
+-- APIS
+    os.loadAPI('SkyNet/MWP/lib/task')
+    os.loadAPI('SkyNet/MWP/lib/move')
 
-os.loadAPI('SkyNet/MWP/lib/task')
+-- Standard Vectors
+    local I = vector.new(1,0,0)
+    local J = vector.new(0,1,0)
+    local K = vector.new(0,0,1)
 
 
 
--- Get location of computer using rednet
-function getLocation()
+------------------------------------------------------
+------------------ GET GPS INFO ----------------------
+
+local function getLocation()
+    -- Get location of computer using rednet
     -- We note that gps.locate is based on the rednet API, which runs coroutine.yield.
     --  Hence, we tell the system to run this line without yielding (see task.noYield),
     --  because we do not want to yield all of getLocation() in the middle of a task.s
@@ -20,10 +26,10 @@ function getLocation()
     end
 end
 
--- Get orientation of turtle (if localMode, 
--- then use the turtle's stored direction)
-function getOrientation(localMode)
-    
+
+local function getOrientation(localMode)
+    -- Get orientation of turtle (if localMode, 
+    -- then use the turtle's stored direction)
     if not turtle then
         return nil
         -- Computers don't have an orientation
@@ -31,10 +37,10 @@ function getOrientation(localMode)
 
     if not localMode then
 
-        -- We yield here becaue non-local getOrientation requires fuel, so yielding allows a taskHandler
+        -- We yield here because non-local getOrientation requires fuel, so yielding allows a taskHandler
         -- to pass execution to a fuel checker listener if we want to.
         coroutine.yield('check_fuel')
-        
+
         local err, loc1 = getLocation()
         -- Now we'll move the turtle
 
@@ -49,7 +55,7 @@ function getOrientation(localMode)
             else
                 if turtle.up() then
                     delta_y = delta_y + 1
-                else 
+                else
                     if turtle.digUp() then
                         turtle.up()
                         delta_y = delta_y + 1
@@ -82,17 +88,18 @@ function getOrientation(localMode)
         disp.y = 0
 
         return disp
-    else 
+    else
         -- This is localMode == true
-        return local_orientation
+        return local_orientation         ------- FIXME - Declared before defined in #96
     end
 end
 
 -- Initialize local_orientation vector
-local_orientation = getOrientation(false)
+local local_orientation = getOrientation(false)
 
--- Calculate the vector trajectory between destination from current location
-function getTrajectory(dest)
+
+local function getTrajectory(dest)
+    -- Calculate the vector trajectory between destination from current location
     local err, loc = getLocation()
     if not err then
         return false, dest - loc
@@ -102,8 +109,13 @@ function getTrajectory(dest)
     end
 end
 
+
+
+------------------------------------------------------
+----------------- ORIENT TURTLE ----------------------
+
 -- Rotate until turtle matches given orientation
-function orientTurtle(direction, localMode)
+local function orientTurtle(direction, localMode)
     -- Let's make sure the direction vector is nonzero
     if direction:length() > 0 then
         if localMode then
@@ -130,118 +142,5 @@ function orientTurtle(direction, localMode)
     end
 end
 
--- In order to deal with event handling higher up, we need to write helper functions
---      that yield the current coroutine before moving each block. Essentially, we are
---      creating a parallel system where the robot checks auxiliary functions after
---      moving a single block. That way, we can deal with event interrupts, etc..
-
-local forward = function ()
-    coroutine.yield('turtle_move_forward')
-    return turtle.forward()
-end
-
-local up = function ()
-    coroutine.yield('turtle_move_up')
-    return turtle.up()
-end
-
-local down = function ()
-    coroutine.yield('turtle_move_down')
-    return turtle.down()
-end
 
 
--- Travel down trajectory vector
-function traverseTrajectory(trajectory, breakBlocks)
-    
-    local dx = trajectory.x
-    local dy = trajectory.y
-    local dz = trajectory.z
-
-    local sign_x = dx/math.abs(dx)
-    local sign_y = dy/math.abs(dy)
-    local sign_z = dz/math.abs(dz)
-
-    -- Move in x first
-    if (dx ~= 0) then
-        orientTurtle(I:mul(sign_x), true)
-        for i = 1,math.abs(dx) do
-            if not forward() then
-                if breakBlocks then
-                    turtle.dig()
-                    forward()
-                end
-            end
-        end
-    end
-
-    -- Move in z now
-    if (dz ~= 0) then
-        orientTurtle(K:mul(sign_z), true)
-        for i = 1,math.abs(dz) do
-            if not forward() then
-                if breakBlocks then
-                    turtle.dig()
-                    forward()
-                end
-            end
-        end
-    end
-
-    -- Move in y
-    if (sign_y) > 0 then
-        for i = 1,math.abs(dy) do
-            if not up() then
-                if breakBlocks then
-                    turtle.digUp()
-                    up()
-                end
-            end
-        end
-    elseif (sign_y) < 0 then
-        for i = 1,math.abs(dy) do
-            if not down() then
-                if breakBlocks then
-                    turtle.digDown()
-                    down()
-                end
-            end
-        end
-    end
-end
-
--- Go to location (takes a 3 vector for destination). Tolerance is the
--- maximum distance from destination allowed
-function goto(destination, _breakBlocks, _tolerance)
-
-    local trajectory = nil
-    local breakBlocks = _breakBlocks or false
-    local tolerance = _tolerance or 1
-
-    repeat
-        err, trajectory = getTrajectory(destination)
-        
-        if not err then
-            traverseTrajectory(trajectory, breakBlocks)
-        else
-            print('Failed to get trajectory, aborting goto to '.. trajectory:tostring())
-            break
-        end
-
-    until trajectory:length() < tolerance
-
-    -- FIX ME until trajectory:round():length() < tolerance
-end
-
-function orientChunk()
-    local err, loc = getLocation()
-    if not err then
-        goto(vector.new(loc.x - loc.x % 16, -- 16 BLOCKS IN A CHUNK
-                        loc.y,
-                        loc.z - loc.z % 16), true)
-        orientTurtle(I, true)
-        return loc.y
-    else
-        print("Error in Location")
-    end
-end

@@ -1,58 +1,45 @@
-os.loadAPI("SkyNet/MWP/lib/gps2")
+-- APIS
+    os.loadAPI("SkyNet/MWP/lib/move")
 
-function up()
-    turtle.up()
-    coroutine.yield()
-end
+-- FIXME: Coroutines for turtle digging?
 
-function down()
-    turtle.down()
-    coroutine.yield()
-end
-
-function forward()
-    turtle.forward()
-    coroutine.yield()
-end
-
-
-function digDownUp(height)
+local function digDownUp(height)
 
     print(height)
 
-    for i=1, height do 
+    for i=1, height do
         turtle.digDown()
-        down()
+        move.down()
     end
-    for i=1, height do 
+    for i=1, height do
         turtle.digUp()
-        up()
+        move.up()
     end
 end
 
-function quarryLine(height, sideWidth)
+local function quarryLine(height, sideWidth)
     local width = sideWidth or 7
 
     print(width)
     print(height)
 
-    for i=1,width do   
+    for i=1,width do
         digDownUp(height)
         turtle.dig()
-        forward()
+        move.forward()
     end
     digDownUp()
 end
 
-function makeQuarry(height, sideLength, sideWidth)
-    length = sideLength or 7
-    width = sideWidth or 7
+local function makeQuarry(height, sideLength, sideWidth)
+    local length = sideLength or 7
+    local width = sideWidth or 7
 
     print(length)
     print(width)
     print(height)
 
-    for i=1,length do   
+    for i=1,length do
         quarryLine(height, width)
         turtle.turnRight()
         turtle.dig()

@@ -1,6 +1,7 @@
-os.loadAPI("SkyNet/MWP/lib/waypoint")
-os.loadAPI("SkyNet/MWP/lib/gps2")
-os.loadAPI("SkyNet/MWP/lib/act")
+-- APIS
+    os.loadAPI("SkyNet/MWP/lib/waypoint")
+    os.loadAPI("SkyNet/MWP/lib/gps2")
+    os.loadAPI("SkyNet/MWP/lib/act")
 
 corner1 = vector.new(-114,91,359)
 corner2 = vector.new(-178,91,359)

@@ -1,26 +1,26 @@
--- This api requires the gps api
-local LIB_GPS_PATH = 'SkyNet/MWP/lib/gps2'
-os.loadAPI(LIB_GPS_PATH)
+-- APIS
+	os.loadAPI("SkyNet/MWP/lib/gps2")
 
-waypoint = {
-    updateLocation = function(self, newLocation)
-                        local err, loc = false, newLocation or gps2.getLocation()
-                        if not err then
-                            self.location = loc
-                        else
-                            self.err = true
-                        end
-                    end,
-    go = function(self, tolerance, breakBlocks)
-                print('Going to waypoint ' .. self.name)
-                print(self.location)
-                previous_location:updateLocation()
-                gps2.goto(self.location, breakBlocks, tolerance)
-            end
+local waypoint = {
+		updateLocation = function(self, newLocation)
+			local err, loc = false, newLocation or gps2.getLocation()
+			if not err then
+				self.location = loc
+			elseif err then
+				self.err = true
+			end
+		end,
+
+		go = function(self, tolerance, breakBlocks)
+			print('Going to waypoint ' .. self.name)
+			print(self.location)
+			previous_location:updateLocation()		-- FIXME: Used before defined!
+			gps2.goTo(self.location, breakBlocks, tolerance)
+		end
 }
 
 function waypoint:new(_name, loc)
-    --Lua constructors scare me.
+    --Lua constructors scare me.		-- They scare me to. -BREVAN
     local obj = {
         name = _name or 'untitled_waypoint',
         location = loc or vector.new(0,0,0),
@@ -35,15 +35,15 @@ end
 local err, loc = gps2.getLocation()
 if not err then
     previous_location = waypoint:new('Previous_Location', loc)
-else
+elseif err then
     previous_location = waypoint:new('Previous_Location', vector.new(0,0,0))
 end
 
 -- Let's create some basic properties of the path class
-path = {
+local path = {
     waypoints = {},
-    name = '__proto__path',
-    append = function(self,waypoint)
+    name = '__proto__path',				-- FIXME? THIS LINE DOESN'T APPEAR TO BE UTILIZED
+    append = function(self,waypoint)	-- FIXME: SHADOWING UPVALUE (waypoint) DEFINED ABOVE
                 table.insert(self.waypoints,waypoint)
             end,
     pop = function(self)
@@ -57,7 +57,7 @@ path = {
 
                 self.currentWaypointNumber = 1
                 self.taskHandler:start(tolerance, breakBlocks)
-                
+
             end,
     disable = function(self)
                 self.taskHandler.enabled = false
@@ -68,18 +68,19 @@ path = {
 }
 
 function path:new(_name, _waypoints)
-    
-    local _path_task_listener = task.listener:new(
-        
-        _name, 
 
-        function (self)
+
+    local _path_task_listener = task.listener:new(
+
+        _name,
+
+        function (self)				-- FIXME: SHADOWING UPVALUE DEFINED ABOVE
             -- This allows us to disable the listener by merely disabling
             -- the path's taskHandler.
             return self.taskHandler.enabled
         end,
 
-        function (self, ...)
+        function (self, ...)		-- FIXME: SHADOWING UPVALUE DEFINED ABOVE
             -- We note that go function is sent to gps2, which yields after each block movement.
             self.waypoints[self.nextWaypointNumber]:go(...)
             self.nextWaypointNumber = self.nextWaypointNumber + 1
@@ -87,11 +88,10 @@ function path:new(_name, _waypoints)
     )
 
     local _taskHandler = task.taskHandler:new(
-            
-        
+
         _path_task_listener,
 
-        function(self)
+        function(self)				-- FIXME: SHADOWING UPVALUE DEFINED ABOVE
             -- We temporarily pass execution to the parent of the path.
             -- There, we can check if we need to refuel, etc.
             coroutine.yield()
@@ -99,7 +99,7 @@ function path:new(_name, _waypoints)
 
         _name
     )
-    
+
     local obj = {
         name = _name or "untitled_path",
         waypoints = _waypoints or {},
