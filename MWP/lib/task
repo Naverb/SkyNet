@@ -121,7 +121,7 @@ function taskHandler:new( _listeners, _intermediateTask, _name)
     return obj
 end
 
-local function noYield(func)
+function noYield(func)
     -- Takes a function that calls coroutine.yield() and continues resuming the function so that
     -- to ignore coroutine.yield().
 	local co

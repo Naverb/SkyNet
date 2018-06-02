@@ -13,14 +13,15 @@ local waypoint = {
 
 		go = function(self, tolerance, breakBlocks)
 			print('Going to waypoint ' .. self.name)
-			print(self.location)
-			previous_location:updateLocation()		-- FIXME: Used before defined!
-			gps2.goTo(self.location, breakBlocks, tolerance)
+            print(self.location)
+            local prevLoc = gps2.getLocation()
+            gps2.goTo(self.location, breakBlocks, tolerance)
+            previous_location:updateLocation(prevLoc)
 		end
 }
 
 function waypoint:new(_name, loc)
-    --Lua constructors scare me.		-- They scare me to. -BREVAN
+    --Lua constructors scare me.		-- They scare me to. -BREVAN        -- *too. - ANTHONY
     local obj = {
         name = _name or 'untitled_waypoint',
         location = loc or vector.new(0,0,0),
