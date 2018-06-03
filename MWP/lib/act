@@ -1,7 +1,7 @@
 
 -- APIS
-    os.loadAPI('SkyNet/MWP/lib/gps2')
-    os.loadAPI('SkyNet/MWP/lib/waypoint')
+    os.loadAPI('SkyNet/MWP/lib/movement/gps2')
+    os.loadAPI('SkyNet/MWP/lib/movement/waypoint')
     os.loadAPI('SkyNet/MWP/lib/task')
 
 -- Waypoints
@@ -33,6 +33,7 @@ local function getFuel(self)
         local err = turtle.suckDown(16)
         if not err then
             turtle.refuel(16)
+
             waypoint.previous_location:go(1, true)
         end
 
@@ -71,6 +72,9 @@ function refuelListener:new(_name)
     return obj
 end
 
+-- Global generic fuel checker
+GRL = refuelListener:new('GRL')
+
 ------------------------------------------------------
 -------------------- STORAGE -------------------------
 
@@ -101,3 +105,6 @@ function storageListener:new(_name)
     local obj = task.listener:new(_name, storeAllItemsCondition, storeAllItems)
     return obj
 end
+
+-- Global generic storage checker
+GSL = storageListener:new('GSL')

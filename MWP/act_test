@@ -1,7 +1,7 @@
 -- APIS
-    os.loadAPI("SkyNet/MWP/lib/waypoint")
-    os.loadAPI("SkyNet/MWP/lib/gps2")
-    os.loadAPI("SkyNet/MWP/lib/act")
+    os.loadAPI("SkyNet/MWP/lib/movement/waypoint")
+    os.loadAPI("SkyNet/MWP/lib/movement/path")
+    os.loadAPI("SkyNet/MWP/lib/movement/gps2")
 
 corner1 = vector.new(-114,91,359)
 corner2 = vector.new(-178,91,359)
@@ -24,8 +24,4 @@ path:append(point3)
 path:append(point4)
 -- path:append(home)
 
-function startPath()
-    repeat path:start(1,false) until false
-end
-
-parallel.waitForAny(startPath, act.refuelMonitor:listen)
+path:start(1, false)

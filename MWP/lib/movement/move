@@ -1,5 +1,5 @@
 -- APIS
-    os.loadAPI('SkyNet/MWP/lib/gps2')
+    os.loadAPI('SkyNet/MWP/lib/movement/gps2')
 
 ------------------------------------------------------
 ----------------- HELPER FUNCTIONS -------------------
