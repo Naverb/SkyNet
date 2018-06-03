@@ -10,7 +10,7 @@ local listener = {
 
     name = 'untitled_task',
 
-    condition = function ()
+    condition = function (self)
         -- This function is called by self:listen().
             -- This function should check for a certain condition. If the
             -- conditions are satisfied, this should return true, else return false.
@@ -20,9 +20,9 @@ local listener = {
     listen_coroutine = coroutine.create(function (self, ...)
         -- This function is called by the task handler
         repeat
-            if self.condition(self) and self.enabled == true then
+            if self:condition() and self.enabled == true then
                 self.status = 'triggered'
-                self.executeTask(self, ...)
+                self:executeTask(...)
             else
                 coroutine.yield(true)
             end
@@ -30,6 +30,8 @@ local listener = {
         -- i.e. when terminate is true, the loop will stop, and the coroutine will become dead,
         -- so the task handler will remove it from the queue.
         until self.terminate == true
+
+        self.status = 'terminated'
     end),
 
     listen = function (self, ...)
@@ -37,9 +39,9 @@ local listener = {
         return coroutine.resume(self.listen_coroutine, self, ...)
     end,
 
-    executeTask = function (self, ...)
+    executeTask = coroutine.wrap(function (self, ...)
         -- This function is called by self:listen() when condition returns true.
-    end,
+    end),
 
 }
 
@@ -51,7 +53,7 @@ function listener:new(_name, _conditon, _task, runOnce)
         terminate = runOnce or false,
 
         condition = _conditon,
-        executeTask = _task
+        executeTask = coroutine.wrap(_task)
     }
 
     setmetatable(obj, self)
@@ -82,10 +84,10 @@ local taskHandler = {
 
     run = function(self, ...)
         -- Here we cycle through all events in this taskHandler.
-        for listenerName, listener in pairs(self.listeners) do	-- FIXME? We might get upvalue from
-            listener:listen(...)								-- definition of listener as class
+        for listenerName, L in pairs(self.listeners) do
+            L:listen(...)
 
-            if coroutine.status(listener.listen_coroutine) == 'dead' then
+            if coroutine.status(L.listen_coroutine) == 'dead' then
                 self.listeners[listenerName] = nil
             end
 
@@ -99,6 +101,8 @@ local taskHandler = {
         while self.enabled do
             self:run(...)
         end
+
+        return 'process_completed'
     end,
 
     stop = function(self)

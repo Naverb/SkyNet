@@ -2,6 +2,7 @@
 -- APIS
     os.loadAPI('SkyNet/MWP/lib/gps2')
     os.loadAPI('SkyNet/MWP/lib/waypoint')
+    os.loadAPI('SkyNet/MWP/lib/task')
 
 -- Waypoints
     local fuelingStation = waypoint.waypoint:new('fuelingStation', vector.new(-145,93,375))
@@ -10,47 +11,11 @@
 
 
 ------------------------------------------------------
------------------ DEFINE LISTENERS -------------------
-
-local listener = {
-		listen = function(self)
-			local eventData = {}
-			self.hasTriggered = false
-			repeat
-				coroutine.yield()
-				eventData = table.pack(self.event())
-			until eventData[1]
-			self.hasTriggered = true
-			return self.task( table.unpack(eventData,2) )
-		end,
-
-		listenPerpetually = function(self)
-			repeat self:listen() until false
-		end
-}
-
-function listener:new(_task, _event)
-    -- This is the constructor for the listener object. It yields until event() returns true.
-    -- then task(...) is called, passing the parameters returned by event().
-    local obj = {
-        event = _event,
-        task = _task,
-        hasTriggered = false
-    }
-    setmetatable(obj, self)
-    self.__index = self
-
-    return obj
-end
-
-
-
-------------------------------------------------------
 --------------------- FUEL ---------------------------
 
-local function getFuel(sufficientRange, delta)
+local function getFuel(self)
 
-    if sufficientRange then
+    if self.sufficientRange then
         -- We want to breakBlocks = true
         fuelingStation:go(1, true)
 
@@ -73,32 +38,38 @@ local function getFuel(sufficientRange, delta)
 
     else
         -- We probably want to write code to notify a turtle to bring fuel
-        print('Insufficient fuel to return home. Difference: ' .. delta)
+        print('Insufficient fuel to return home. Difference: ' .. self.delta)
     end
 
 end
 
-local function refuelIfNecessary()
+local function refuelIfNecessary(self)
     local fuelRange = turtle.getFuelLevel()
     local err, displacementToStation = gps2.getTrajectory(fuelingStation.location)
 
     -- This is the distance in the blocks the turtle must travel to get to the fueling station
     local distanceToStation = math.abs(displacementToStation.x) + math.abs(displacementToStation.y) + math.abs(displacementToStation.z)
 
-    if ( (fuelRange - distanceToStation) < 25 and (fuelRange - distanceToStation) > 0)then
+    if ( (fuelRange - distanceToStation) < 25 and (fuelRange - distanceToStation) > 0) then
         -- We return true because we need to go to the refuelling station
-        return true, true
+        self.sufficientRange = true
+        return true
     elseif ( (fuelRange - distanceToStation) <= 0) then
         -- We don't have enough fuel to return home
         local delta = fuelRange - distanceToStation
-        return true, false, delta
+        self.sufficientRange = false
+        self.delta = delta
+        return true
     end
 
     -- Unless we return true above, we have not reached a fueling station, so we return false.
     return false
 end
 
-
+function refuelListener:new(_name)
+    local obj = task.listener:new(_name, refuelIfNecessary, getFuel)
+    return obj
+end
 
 ------------------------------------------------------
 -------------------- STORAGE -------------------------
@@ -113,7 +84,7 @@ local function storeAllItems()
     waypoint.previous_location:go(1,false)
 end
 
-local function storeAllItemsEvent() -- this code doesn't seem ideal to me -Brevan
+local function storeAllItemsCondition() -- this code doesn't seem ideal to me -Brevan
     for i=1,16 do
         local itemCount = turtle.getItemCount(i)
         if itemCount == 0 then
@@ -126,10 +97,7 @@ local function storeAllItemsEvent() -- this code doesn't seem ideal to me -Breva
     return false
 end
 
-
-
-------------------------------------------------------
------------------ CREATE LISTENERS -------------------
-
-local refuelMonitor = listener:new(getFuel, refuelIfNecessary)
-local storageMonitor = listener:new(storeAllItems, storeAllItemsEvent)
+function storageListener:new(_name)
+    local obj = task.listener:new(_name, storeAllItemsCondition, storeAllItems)
+    return obj
+end
