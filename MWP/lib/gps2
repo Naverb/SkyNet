@@ -1,22 +1,22 @@
 -- APIS
     os.loadAPI('SkyNet/MWP/lib/task')
-    os.loadAPI('SkyNet/MWP/lib/move')
 
 -- Standard Vectors
     local I = vector.new(1,0,0)
     local J = vector.new(0,1,0)
     local K = vector.new(0,0,1)
 
-
+-- Initialize local_orientation vector
+local local_orientation
 
 ------------------------------------------------------
 ------------------ GET GPS INFO ----------------------
 
-local function getLocation()
+function getLocation()
     -- Get location of computer using rednet
     -- We note that gps.locate is based on the rednet API, which runs coroutine.yield.
     --  Hence, we tell the system to run this line without yielding (see task.noYield),
-    --  because we do not want to yield all of getLocation() in the middle of a task.s
+    --  because we do not want to yield all of getLocation() in the middle of a task.
     local loc = vector.new(task.noYield(gps.locate)(5))
     if not loc then
         return true, nil
@@ -27,7 +27,7 @@ local function getLocation()
 end
 
 
-local function getOrientation(localMode)
+function getOrientation(localMode)
     -- Get orientation of turtle (if localMode, 
     -- then use the turtle's stored direction)
     if not turtle then
@@ -94,11 +94,16 @@ local function getOrientation(localMode)
     end
 end
 
--- Initialize local_orientation vector
-local local_orientation = getOrientation(false)
+-- Set the initial value of the local_orientation vector
+if not local_orientation then
+    -- We check if local_orientation exists because OS.loadAPI appears to
+    -- run this line each time loadAPI is called, and we only want to intialize
+    -- local orientation once.
+    local_orientation = getOrientation(false)
+end
 
 
-local function getTrajectory(dest)
+function getTrajectory(dest)
     -- Calculate the vector trajectory between destination from current location
     local err, loc = getLocation()
     if not err then
@@ -115,7 +120,7 @@ end
 ----------------- ORIENT TURTLE ----------------------
 
 -- Rotate until turtle matches given orientation
-local function orientTurtle(direction, localMode)
+function orientTurtle(direction, localMode)
     -- Let's make sure the direction vector is nonzero
     if direction:length() > 0 then
         if localMode then

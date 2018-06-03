@@ -1,5 +1,6 @@
 -- APIS
-	os.loadAPI("SkyNet/MWP/lib/gps2")
+    os.loadAPI("SkyNet/MWP/lib/gps2")
+    os.loadAPI("SkyNet/MWP/lib/move")
 
 local waypoint = {
 		updateLocation = function(self, newLocation)
@@ -15,7 +16,7 @@ local waypoint = {
 			print('Going to waypoint ' .. self.name)
             print(self.location)
             local prevLoc = gps2.getLocation()
-            gps2.goTo(self.location, breakBlocks, tolerance)
+            move.goTo(self.location, breakBlocks, tolerance)
             previous_location:updateLocation(prevLoc)
 		end
 }

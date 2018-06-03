@@ -9,17 +9,17 @@
 --      creating a parallel system where the robot checks auxiliary functions after
 --      moving a single block. That way, we can deal with event interrupts, etc..
 
-local forward = function ()
+forward = function ()
     coroutine.yield('turtle_move_forward')
     return turtle.forward()
 end
 
-local up = function ()
+up = function ()
     coroutine.yield('turtle_move_up')
     return turtle.up()
 end
 
-local down = function ()
+down = function ()
     coroutine.yield('turtle_move_down')
     return turtle.down()
 end
@@ -59,8 +59,8 @@ local function traverseTrajectory(trajectory, breakBlocks)
         for i = 1,math.abs(dz) do
             if not forward() then
                 if breakBlocks then
-                    turtle.dig()                -- FIXME? COROUTINE?
-                    forward()
+                    turtle.dig()                -- FIXME? COROUTINE? 
+                    forward()                       -- turtle.dig() should not call a coroutine.yield() because it does not use any fuel.
                 end
             end
         end
@@ -90,7 +90,7 @@ end
 
 -- Go to location (takes a 3 vector for destination). Tolerance is the
 -- maximum distance from destination allowed
-local function goTo(destination, _breakBlocks, _tolerance)
+function goTo(destination, _breakBlocks, _tolerance)
 
 
     local breakBlocks = _breakBlocks or false
@@ -115,7 +115,7 @@ end
 ------------------------------------------------------
 -------------- ENVIROMENTAL ORIENTATION --------------
 
-local function orientChunk()
+function orientChunk()
     local err, loc = gps2.getLocation()
     if not err then
         goTo(vector.new(loc.x - loc.x % 16, -- 16 BLOCKS IN A CHUNK
