@@ -29,5 +29,4 @@ local function require( _sPath )
     return tAPI
 end
 
--- this will return the function to _G
-return require
+_G.require = require
