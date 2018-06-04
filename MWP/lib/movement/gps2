@@ -6,8 +6,7 @@
     local J = vector.new(0,1,0)
     local K = vector.new(0,0,1)
 
--- Initialize local_orientation vector
-local local_orientation
+
 
 ------------------------------------------------------
 ------------------ GET GPS INFO ----------------------
@@ -95,12 +94,7 @@ function getOrientation(localMode)
 end
 
 -- Set the initial value of the local_orientation vector
-if not local_orientation then
-    -- We check if local_orientation exists because OS.loadAPI appears to
-    -- run this line each time loadAPI is called, and we only want to intialize
-    -- local orientation once.
-    local_orientation = getOrientation(false)
-end
+local_orientation = getOrientation(false)
 
 
 function getTrajectory(dest)

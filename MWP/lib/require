@@ -1,0 +1,33 @@
+-- I just ripped the os.loadAPI and modified it to return the
+-- loaded file, that way loading files is localized to a file.
+local function require( _sPath )
+    if type( _sPath ) ~= "string" then
+        error( "bad argument #1 (expected string, got " .. type( _sPath ) .. ")", 2 ) 
+    end
+    local sName = fs.getName( _sPath )
+    if sName:sub(-4) == ".lua" then
+        sName = sName:sub(1,-5)
+    end
+    if tAPIsLoading[sName] == true then
+        printError( "API "..sName.." is already being loaded" )
+        return false
+    end
+    tAPIsLoading[sName] = true
+
+    local tEnv = {}
+    setmetatable( tEnv, { __index = _G } )
+    local fnAPI, err = loadfile( _sPath, tEnv )
+    
+    local tAPI = {}
+    for k,v in pairs( tEnv ) do
+        if k ~= "_ENV" then
+            tAPI[k] =  v
+        end
+    end
+  
+    tAPIsLoading[sName] = nil
+    return tAPI
+end
+
+-- this will return the function to _G
+return require

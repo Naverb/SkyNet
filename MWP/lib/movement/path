@@ -4,7 +4,7 @@ os.loadAPI('SkyNet/MWP/lib/movement/waypoint')
 os.loadAPI('SkyNet/MWP/lib/act')
 
 -- Let's create some basic properties of the path class
-local path = {
+path = {
     waypoints = {},
     name = '__proto__path',				-- FIXME? THIS LINE DOESN'T APPEAR TO BE UTILIZED
     append = function(self,waypoint)	-- FIXME: SHADOWING UPVALUE (waypoint) DEFINED ABOVE

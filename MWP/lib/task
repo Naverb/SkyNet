@@ -1,12 +1,6 @@
 -- This is the API dedicated to handling tasks, listeners, and the tasks queue.
-    -- Why is the API not called "events" then? -BREVAN
-        -- Ssshhhhhhhh - Anthony
 
--- FIXME? Should we consolidate the code from act into this?
-    -- No. The act code is deprecated. We need to rewrite our
-    -- fuel listeners and storage listeners into the new paradigm. - Anthony
-
-local listener = {
+listener = {
 
     name = 'untitled_task',
 
@@ -62,7 +56,7 @@ function listener:new(_name, _conditon, _task, runOnce)
     return obj
 end
 
-local taskHandler = {
+taskHandler = {
 
     name = 'untitled_task_handler',
 

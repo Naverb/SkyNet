@@ -2,7 +2,7 @@
     os.loadAPI("SkyNet/MWP/lib/movement/gps2")
     os.loadAPI("SkyNet/MWP/lib/movement/move")
 
-local waypoint = {
+waypoint = {
 		updateLocation = function(self, newLocation)
 			local err, loc = false, newLocation or gps2.getLocation()
 			if not err then
