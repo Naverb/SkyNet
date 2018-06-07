@@ -1,8 +1,7 @@
--- APIS
-    os.loadAPI("SkyNet/MWP/lib/movement/gps2")
-    os.loadAPI("SkyNet/MWP/lib/movement/move")
 
-local waypoint = {
+
+print('Loading waypoint class')
+waypoint = {
 		updateLocation = function(self, newLocation)
 			local err, loc = false, newLocation or gps2.getLocation()
 			if not err then
@@ -21,6 +20,7 @@ local waypoint = {
 		end
 }
 
+print('Loading waypoint constructor')
 function waypoint:new(_name, loc)
     --Lua constructors scare me.		-- They scare me to. -BREVAN        -- *too. - ANTHONY
     local obj = {
@@ -33,6 +33,7 @@ function waypoint:new(_name, loc)
     return obj
 end
 
+print('Loading previous_location')
 -- We create this global variable so that we may work with the robot's prior location
 local err, loc = gps2.getLocation()
 if not err then
@@ -40,4 +41,3 @@ if not err then
 elseif err then
     previous_location = waypoint:new('Previous_Location', vector.new(0,0,0))
 end
-

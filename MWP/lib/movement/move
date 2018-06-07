@@ -1,5 +1,4 @@
--- APIS
-    os.loadAPI('SkyNet/MWP/lib/movement/gps2')
+
 
 ------------------------------------------------------
 ----------------- HELPER FUNCTIONS -------------------
@@ -59,7 +58,7 @@ local function traverseTrajectory(trajectory, breakBlocks)
         for i = 1,math.abs(dz) do
             if not forward() then
                 if breakBlocks then
-                    turtle.dig()                -- FIXME? COROUTINE? 
+                    turtle.dig()                -- FIXME? COROUTINE?
                     forward()                       -- turtle.dig() should not call a coroutine.yield() because it does not use any fuel.
                 end
             end

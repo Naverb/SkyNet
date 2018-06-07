@@ -1,8 +1,4 @@
 
--- APIS
-    os.loadAPI('SkyNet/MWP/lib/movement/gps2')
-    os.loadAPI('SkyNet/MWP/lib/movement/waypoint')
-    os.loadAPI('SkyNet/MWP/lib/task')
 
 -- Waypoints
     local fuelingStation = waypoint.waypoint:new('fuelingStation', vector.new(-145,93,375))
@@ -67,6 +63,8 @@ local function refuelIfNecessary(self)
     return false
 end
 
+refuelListener = {}
+
 function refuelListener:new(_name)
     local obj = task.listener:new(_name, refuelIfNecessary, getFuel)
     return obj
@@ -100,6 +98,8 @@ local function storeAllItemsCondition() -- this code doesn't seem ideal to me -B
 
     return false
 end
+
+storageListener = {}
 
 function storageListener:new(_name)
     local obj = task.listener:new(_name, storeAllItemsCondition, storeAllItems)

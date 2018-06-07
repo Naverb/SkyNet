@@ -1,10 +1,7 @@
--- APIs
-os.loadAPI('SkyNet/MWP/lib/task')
-os.loadAPI('SkyNet/MWP/lib/movement/waypoint')
-os.loadAPI('SkyNet/MWP/lib/act')
+
 
 -- Let's create some basic properties of the path class
-local path = {
+path = {
     waypoints = {},
     name = '__proto__path',				-- FIXME? THIS LINE DOESN'T APPEAR TO BE UTILIZED
     append = function(self,waypoint)	-- FIXME: SHADOWING UPVALUE (waypoint) DEFINED ABOVE
@@ -32,7 +29,9 @@ local path = {
 }
 
 function path:new(_name, _waypoints)
+    print('Creating new path: ' .. _name)
 
+    local path = self
 
     local _path_task_listener = task.listener:new(
         --NAME
@@ -41,20 +40,23 @@ function path:new(_name, _waypoints)
         function (self)				-- FIXME: SHADOWING UPVALUE DEFINED ABOVE
             -- This allows us to disable the listener by merely disabling
             -- the path's taskHandler.
-            return self.taskHandler.enabled
+            print('Checking path_task_listener condition.')
+            --print('Checking path_task_listener condition: ' .. path.taskHandler.enabled)
+            --return path.taskHandler.enabled
         end,
         --EXECUTETASK
         function (self, ...)		-- FIXME: SHADOWING UPVALUE DEFINED ABOVE
             -- We note that go function is sent to gps2, which yields after each block movement.
-            self.waypoints[self.nextWaypointNumber]:go(...)
-            self.nextWaypointNumber = self.nextWaypointNumber + 1
+            print('Starting path to waypoint ' .. path.nextWaypointNumber .. '.')
+            path.waypoints[self.nextWaypointNumber]:go(...)
+            path.nextWaypointNumber = path.nextWaypointNumber + 1
         end
     )
 
     local _taskHandler = task.taskHandler:new(
         --LISTENERS (there is only one listener in this case)
         {
-            _name = _path_task_listener
+            --_name = _path_task_listener
         },
         --INTERMEDIATETASK
         function(self)				-- FIXME: SHADOWING UPVALUE DEFINED ABOVE
@@ -62,12 +64,15 @@ function path:new(_name, _waypoints)
             -- There, we can check if we need to refuel, etc.
 
             -- This right here uses the generic refuel listener to make sure we have sufficient fuel.
+            print('   Path intermediateTask')
             act.GRL:listen()
             coroutine.yield()
         end,
         --NAME
         _name
     )
+
+    _taskHandler:addListener(_path_task_listener)
 
     local obj = {
         name = _name or "untitled_path",
@@ -81,7 +86,3 @@ function path:new(_name, _waypoints)
     self.__index = self
     return obj
 end
-
-
-
-
