@@ -9,6 +9,7 @@
 
 print('Loading getLocation')
 function getLocation()
+    print('Getting GPS Location')
     -- Get location of computer using rednet
     -- We note that gps.locate is based on the rednet API, which runs coroutine.yield.
     --  Hence, we tell the system to run this line without yielding (see task.noYield),

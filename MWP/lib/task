@@ -7,12 +7,15 @@
     -- fuel listeners and storage listeners into the new paradigm. - Anthony
 
 print('Entered task')
-print('   Loading listener class.')
+print('Loading listener class.')
 listener = {
 
-    name = 'untitled_task',
+    name = 'untitled_listener',
+    -- Let's enable the listener by default
+    enabled = true,
+    terminate = false,
 
-    condition = function (self)
+    checkCondition = function (self)
         -- This function is called by self:listen().
             -- This function should check for a certain condition. If the
             -- conditions are satisfied, this should return true, else return false.
@@ -23,21 +26,31 @@ listener = {
     listen_coroutine = coroutine.create(function (self, ...)
         -- This function is called by the task handler
         print('Entered the listen coroutine for ' .. self.name)
+        local result
         repeat
             print('Reached if statement for ' .. self.name)
-            if true then--self:condition() then --and self.enabled == true then
+            if self:checkCondition() then
                 print('Executing task for ' .. self.name)
                 self.status = 'triggered'
-                result = self:executeTask(...)
-                print('Ran executeTask')
+                --ok, result = self:executeTask(...)
+                ok = 'null'
+                result = 'NULLRESULT'
+                print('Ran executeTask, ok? ' .. ok)
             else
                 print('Condition for ' .. self.name .. ' returned false.')
-                coroutine.yield(true)
+                result = false
             end
+
         -- terminate is a property that determines whether the listener should finish listening.
         -- i.e. when terminate is true, the loop will stop, and the coroutine will become dead,
         -- so the task handler will remove it from the queue.
-      until false --self.terminate == true
+
+        -- Now we yield the listen coroutine. This passes control back to the taskHandler.
+                -- The next time this listener is called, the condition in this repeat loop will be checked,
+                -- and if self.terminate == true, the loop will terminate entirely and the listen_coroutine
+                -- will die.
+            coroutine.yield(result)
+        until self.terminate == true
 
         self.status = 'terminated'
         print('Exited repeating loop for ' .. self.name)
@@ -45,27 +58,40 @@ listener = {
 
     listen = function (self, ...)
         self.status = 'listening'
-        print('Listening: ' .. self.name)
-        return coroutine.resume(self.listen_coroutine, self, ...)
+        print('LISTENING: ' .. self.name)
+        local ok, result = coroutine.resume(self.listen_coroutine, self, ...)
+        print('Status of ' .. self.name .. '.listen_coroutine: ' .. coroutine.status(self.listen_coroutine) )
+        return result
     end,
 
-    executeTask = coroutine.wrap(function (...)
+    task_co = coroutine.create(function (self, ...)
         print('Default executeTask for listener.')
         -- This function is called by self:listen() when condition returns true.
     end),
 
+    executeTask = function(self,...)
+        return corotuine.resume(self.task_co, self, ...)
+    end
 }
 
-print('   Loading listener constructor.')
-function listener:new(_name, _conditon, _task, runOnce)
+print('Loading listener constructor.')
+function listener:new(_name, _conditon, _task, _runOnce)
+    
     local obj = {
         status = 'new',
         enabled = true,
-        name = _name or 'untitled_listener',
-        terminate = runOnce or false,
+        name = _name,
+        terminate = _runOnce,
 
-        condition = _conditon,
-        executeTask = coroutine.wrap(_task)
+        checkCondition = function(thisListener)
+            if thisListener.enabled then
+                return _conditon(thisListener)
+            else
+                return false
+            end
+        end,
+
+        task_co = coroutine.create(_task)
     }
 
     setmetatable(obj, self)
@@ -74,12 +100,13 @@ function listener:new(_name, _conditon, _task, runOnce)
     return obj
 end
 
-print('   Loading taskHandler class.')
+print('Loading taskHandler class.')
 taskHandler = {
 
     name = 'untitled_task_handler',
 
     listeners = {},
+    deadListeners = {},
 
     intermediateTask = function (self, ...)
         -- This function is ran after each time a listener yields. This may be the key to running critical events or nesting event listeners.
@@ -92,26 +119,36 @@ taskHandler = {
 
     removeListener = function(self, listener)
         if self.listeners[listener.name] then
-            table.remove(self.listeners,listener.name)
+            table.insert(self.deadListeners,listener)
         end
     end,
 
     run = function(self, ...)
         -- Here we cycle through all events in this taskHandler.
-        print('   Running through listeners in ' .. self.name)
+
+        -- Now we delete dead listeners
+        for _,L in ipairs(self.deadListeners) do
+            self.listeners[L.name] = nil
+        end
+
+        local result
+
         for listenerName, L in pairs(self.listeners) do
 
             if listenerName then
-              print('   -->' .. listenerName)
+              print('CHECKING   -->' .. listenerName)
             else
-              print('   nothing in here!')
+              print('Null listener in ' .. self.name)
             end
 
-            L:listen(...)
+            result = L:listen(...)
+
+            print('Received result from listener: ')
+            print(result)
 
             if coroutine.status(L.listen_coroutine) == 'dead' then
-                print(coroutine.status(L.listen_coroutine))
-                --self.listeners[listenerName] = nil
+                print('DELETE LISTENER ' .. L.name .. '!')
+                self:removeListener(L)
             end
 
             self:intermediateTask()
@@ -123,8 +160,6 @@ taskHandler = {
 
         while self.enabled do
             print('Starting ' .. self.name .. ':run(...)')
-            print('Current listeners: ')
-            print(self.listeners)
             self:run(...)
             print('Reached end of loop, task:118.')
         end
@@ -137,7 +172,7 @@ taskHandler = {
     end
 }
 
-print('   Loading taskHandler constructor.')
+print('Loading taskHandler constructor.')
 function taskHandler:new( _listeners, _intermediateTask, _name)
     local obj = {
         name = _name or 'untitled_task_handler',
@@ -153,7 +188,7 @@ function taskHandler:new( _listeners, _intermediateTask, _name)
     return obj
 end
 
-print('   Loading noYield function.')
+print('Loading noYield function.')
 function noYield(func)
   print('Executing noYield')
     -- Takes a function that calls coroutine.yield() and continues resuming the function so that

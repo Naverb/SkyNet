@@ -41,24 +41,30 @@ local function getFuel(self)
 end
 
 local function refuelIfNecessary(self)
+    print('CHECKING IF TURTLE NEEDS FUEL')
     local fuelRange = turtle.getFuelLevel()
+    print('CHECKING DISTANCE TO FUEL STATION')
     local err, displacementToStation = gps2.getTrajectory(fuelingStation.location)
 
     -- This is the distance in the blocks the turtle must travel to get to the fueling station
+    print('CALCULATING DISTANCE TO FUEL STATION')
     local distanceToStation = math.abs(displacementToStation.x) + math.abs(displacementToStation.y) + math.abs(displacementToStation.z)
 
     if ( (fuelRange - distanceToStation) < 25 and (fuelRange - distanceToStation) > 0) then
         -- We return true because we need to go to the refuelling station
+        print('SETTING COURSE TO FUEL STATION')
         self.sufficientRange = true
         return true
     elseif ( (fuelRange - distanceToStation) <= 0) then
         -- We don't have enough fuel to return home
+        print('INSUFFICIENT FUEL')
         local delta = fuelRange - distanceToStation
         self.sufficientRange = false
         self.delta = delta
         return true
     end
 
+    print('No fuel is needed.')
     -- Unless we return true above, we have not reached a fueling station, so we return false.
     return false
 end
