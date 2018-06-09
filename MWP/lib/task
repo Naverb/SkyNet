@@ -32,10 +32,11 @@ listener = {
             if self:checkCondition() then
                 print('Executing task for ' .. self.name)
                 self.status = 'triggered'
-                --ok, result = self:executeTask(...)
-                ok = 'null'
-                result = 'NULLRESULT'
-                print('Ran executeTask, ok? ' .. ok)
+                ok, result = self:executeTask(...)
+                --ok = 'null'
+                --result = 'NULLRESULT'
+                print('Ran executeTask, ok? ')
+                print(ok)
             else
                 print('Condition for ' .. self.name .. ' returned false.')
                 result = false
@@ -70,7 +71,7 @@ listener = {
     end),
 
     executeTask = function(self,...)
-        return corotuine.resume(self.task_co, self, ...)
+        return coroutine.resume(self.task_co, self, ...)
     end
 }
 

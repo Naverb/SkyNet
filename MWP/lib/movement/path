@@ -75,8 +75,8 @@ function path:new(_name, _waypoints)
         _name .. '_taskHandler'
     )
 
-    _taskHandler:addListener(act.GRL)
-    --_taskHandler:addListener(_path_task_listener)
+    --_taskHandler:addListener(act.GRL)
+    _taskHandler:addListener(_path_task_listener)
 
     local obj = {
         name = _name or "untitled_path",
