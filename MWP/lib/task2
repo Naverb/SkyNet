@@ -10,14 +10,26 @@ task = {
 
 function task:checkCondition(parentSequence, ...)
     --Checks to see if the task is enabled. If so, it evaluates the conditon to determine if the task should be run.
+    if self.enabled then
+        return self.conditon -- Yes, Brevan, that is *conditon*
+    end
+
+    -- If the task is not enabled, we do not let the task execute.
+    return false
 end
 
 function task:run(parentSequence, ...)
     -- Starts/resumes the task_co to complete the task's action.
+    if self:checkCondition(parentSequence) then
+        -- Execute task_co
+    else
+        -- Report to taskHandler that conditions for this task are not satisfied and task did not run.
+    end
 end
 
-function task:registerOutcome(parentSequence, ...)
+function task:registerOutcome(parentSequence, event, ...)
     -- Sets the promised outcome event (a string) of this task.
+    self.registeredOutcome = event
 end
 
 function task:yield(parentSequence, resumeEvent, ...)
@@ -26,10 +38,12 @@ end
 
 function task:enable()
     -- Set this task's enabled attribute to true.
+    self.enabled = true
 end
 
 function task:disable()
     -- Set this task's enabled attribute to false.
+    self.enabled = false
 end
 
 function task:new()
