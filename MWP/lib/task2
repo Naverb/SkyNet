@@ -1,0 +1,56 @@
+--[[ This the new API to handle tasks (listeners) and taskSequences (taskHandlers).
+ We found the previous API had some major shortcomings, including:
+      1) When a function yielded within a listener, the task_co would intercept the yield before the BIOS coroutine could receive the event. This prevented APIs like GPS, GPS2, and rednet from working.
+      2) We needed to modify attributes of a parent taskHandler from within a specific listener. So we need to find a clean and simple way to pass a parent object (taskSequence) to child objects (task).
+]]--
+
+task = {
+
+}
+
+function task:checkCondition(parentSequence, ...)
+    --Checks to see if the task is enabled. If so, it evaluates the conditon to determine if the task should be run.
+end
+
+function task:run(parentSequence, ...)
+    -- Starts/resumes the task_co to complete the task's action.
+end
+
+function task:registerOutcome(parentSequence, ...)
+    -- Sets the promised outcome event (a string) of this task.
+end
+
+function task:yield(parentSequence, resumeEvent, ...)
+    -- Yields this task (to be called within task.co), and reports resumeEvent to the parentSequence.
+end
+
+function task:enable()
+    -- Set this task's enabled attribute to true.
+end
+
+function task:disable()
+    -- Set this task's enabled attribute to false.
+end
+
+function task:new()
+    --This is the constructor for task.
+
+end
+
+taskSequence = {
+
+}
+
+function taskSequence:queueTask()
+    -- Add a task to the taskSequence, to be completed after all other tasks in nextTask have been run.
+end
+
+function taskSequence:run()
+    -- Iterates through nextTask and runs tasks.
+
+end
+
+function taskSequence:new()
+    --This is the constructor for taskSequence. I think we should extend the task class to make taskSequence. That way, we can yield the taskSequence and insert it into large taskSequences.
+
+end
