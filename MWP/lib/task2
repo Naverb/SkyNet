@@ -4,24 +4,61 @@
       2) We needed to modify attributes of a parent taskHandler from within a specific listener. So we need to find a clean and simple way to pass a parent object (taskSequence) to child objects (task).
 ]]--
 
-task = {
+-- Perhaps we want to make both the task and the taskSequence classes extensions of a general, yielding_object class. That way we can write one yielding function for both classes.
 
+yielding_object = {
+    name = 'untitled_yielding_object',
+    resumeEvent = 'nullEvent',
+    status = 'cold'
 }
 
-function task:checkCondition(parentSequence, ...)
-    --Checks to see if the task is enabled. If so, it evaluates the conditon to determine if the task should be run.
-    if self.enabled then
-        return self:conditon() -- Yes, Brevan, that is *conditon*
+setmetatable(yielding_object, yielding_object)
+yielding_object.__index = function (t, k)
+    -- We probably want to make this function a little more sophisticated.
+    error('Yielding object' .. t.name .. ' attempted to access nil value at '.. k .. '.')
+end
+
+function yielding_object:yield(parent, resumeEvent, ...)
+    -- Yields the yielding object to be intercepted by the parent yielding object. Passes resumeEvent info to notify the parent of the conditions necessary to resume this.
+    self.status = 'cold'
+    self.resumeEvent = resumeEvent or 'nullEvent' -- If resumeEvent is nil, we assume that this yielding object can be resumed at any time.
+    -- Now we hand control back to the parent.
+    coroutine.yield(resumeEvent, ...)
+end
+
+task = {
+    name = 'untitled_task',
+    registeredOutcome = 'none',
+    resumeEvent = 'nullEvent',
+    enabled = true
+}
+
+setmetatable(task, yielding_object)
+task.__index = yielding_object -- We tell task to extend yielding_object.
+
+function task.conditon()
+    -- This is the default conditon of a task, it just returns true.
+    return true
+end
+
+function task:checkCondition(parentSequence,event, ...)
+    event = event or 'nullEvent'
+     -- Now we check if the resumeEvent is satisfied:
+    if event == self.resumeEvent and self.enabled then --self.enabled then
+            return self:conditon() -- Yes, Brevan, that is *conditon*
     end
+    -- If we reach this line, the task is enabled, but we did not receive the event that we needed to resume. This shouldn't happen, so we report it.
+    error("Task " .. self.name .. " failed to receive it's proper resume event. Needed " .. self.resumeEvent .. " but received " .. event .. ".")
 
     -- If the task is not enabled, we do not let the task execute.
     return false
 end
 
-function task:run(parentSequence, ...)
+function task:run(parentSequence, event, ...)
+    self.status = 'hot'
     -- Starts/resumes the task_co to complete the task's action.
-    if self:checkCondition(parentSequence) then
-        -- Execute task_co
+    if self:checkCondition(parentSequence, event) then
+        -- Execute task_co, return the results.
     else
         -- Report to taskHandler that conditions for this task are not satisfied and task did not run.
     end
@@ -32,10 +69,6 @@ function task:registerOutcome(parentSequence, event, ...)
     self.registeredOutcome = event
     -- Notify the taskSequence that this task has a new registeredEvent.
     parentSequence:registerTask(self)
-end
-
-function task:yield(parentSequence, resumeEvent, ...)
-    -- Yields this task (to be called within task.co), and reports resumeEvent to the parentSequence.
 end
 
 function task:enable()
@@ -51,18 +84,34 @@ end
 function task:new()
     --This is the constructor for task.
 
+    -- Here we construct task_co.
+
 end
 
 taskSequence = {
-
+    name = 'untitled_taskSequence',
+    registeredOutcome = 'sequence_status',
+    enabled = true
 }
+
+setmetatable(taskSequence, task)
+taskSequence.__index = task -- We tell taskSequence to extend task.
 
 function taskSequence:queueTask()
     -- Add a task to the taskSequence, to be completed after all other tasks in nextTask have been run.
 end
 
 function taskSequence:run()
+    local thisSequence = self
     -- Iterates through nextTask and runs tasks.
+    if self.enabled then
+        self.status = 'hot'
+
+        -- Pull the next task from the stack:
+        for i, task in ipairs(nextTask) do
+            local taskResult = task:run(thisSequence)
+        end
+    end
 
 end
 
@@ -71,17 +120,9 @@ function taskSequence:registerTask(task)
     -- Move task to the table self.tasks[task.registeredOutcome]
 end
 
-function taskSequence:enable()
-    -- Enable this taskSequence
-    self.enabled = true
-end
-
-function taskSequence:disable()
-    -- Disable this taskSequence
-    self.enabled = false
-end
-
 function taskSequence:new()
     --This is the constructor for taskSequence. I think we should extend the task class to make taskSequence. That way, we can yield the taskSequence and insert it into large taskSequences.
+
+    -- Make sure to construct the coroutine to handle the tasks.
 
 end
