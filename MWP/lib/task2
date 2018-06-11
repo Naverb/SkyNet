@@ -30,6 +30,8 @@ end
 function task:registerOutcome(parentSequence, event, ...)
     -- Sets the promised outcome event (a string) of this task.
     self.registeredOutcome = event
+    -- Notify the taskSequence that this task has a new registeredEvent.
+    parentSequence:registerTask(self)
 end
 
 function task:yield(parentSequence, resumeEvent, ...)
@@ -62,6 +64,21 @@ end
 function taskSequence:run()
     -- Iterates through nextTask and runs tasks.
 
+end
+
+function taskSequence:registerTask(task)
+    -- Registers a task to its registeredOutcome
+    -- Move task to the table self.tasks[task.registeredOutcome]
+end
+
+function taskSequence:enable()
+    -- Enable this taskSequence
+    self.enabled = true
+end
+
+function taskSequence:disable()
+    -- Disable this taskSequence
+    self.enabled = false
 end
 
 function taskSequence:new()
