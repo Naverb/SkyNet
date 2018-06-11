@@ -1,4 +1,4 @@
---[[ This the new API to handle tasks (listeners) and taskSequences (taskHandlers).
+--[[ This is the new API to handle tasks (listeners) and taskSequences (taskHandlers).
  We found the previous API had some major shortcomings, including:
       1) When a function yielded within a listener, the task_co would intercept the yield before the BIOS coroutine could receive the event. This prevented APIs like GPS, GPS2, and rednet from working.
       2) We needed to modify attributes of a parent taskHandler from within a specific listener. So we need to find a clean and simple way to pass a parent object (taskSequence) to child objects (task).
@@ -11,7 +11,7 @@ task = {
 function task:checkCondition(parentSequence, ...)
     --Checks to see if the task is enabled. If so, it evaluates the conditon to determine if the task should be run.
     if self.enabled then
-        return self.conditon -- Yes, Brevan, that is *conditon*
+        return self:conditon() -- Yes, Brevan, that is *conditon*
     end
 
     -- If the task is not enabled, we do not let the task execute.
