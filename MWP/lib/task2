@@ -18,7 +18,7 @@ yielding_object.__index = function (t, k)
     error('Yielding object' .. t.name .. ' attempted to access nil value at '.. k .. '.')
 end
 
-function yielding_object:yield(parent, resumeEvent, ...)
+function yielding_object:yield(resumeEvent, ...)
     -- Yields the yielding object to be intercepted by the parent yielding object. Passes resumeEvent info to notify the parent of the conditions necessary to resume this.
     self.status = 'cold'
     self.resumeEvent = resumeEvent or 'nullEvent' -- If resumeEvent is nil, we assume that this yielding object can be resumed at any time.
@@ -46,7 +46,7 @@ function task.conditon()
     return true
 end
 
-function task:checkCondition(parentSequence,event, ...)
+function task:checkCondition(event, ...)
     event = event or 'nullEvent'
      -- Now we check if the resumeEvent is satisfied:
     if event == self.resumeEvent and self.enabled then --self.enabled then
@@ -59,17 +59,18 @@ function task:checkCondition(parentSequence,event, ...)
     return false
 end
 
-function task:run(parentSequence, event, ...)
+function task:run(event, ...)
     self.status = 'hot'
     -- Starts/resumes the task_co to complete the task's action.
-    if self:checkCondition(parentSequence, event) then
+    if self:checkCondition(event) then
         -- Execute task_co, return the results.
     else
         -- Report to taskHandler that conditions for this task are not satisfied and task did not run.
     end
 end
 
-function task:registerOutcome(parentSequence, event, ...)
+function task:registerOutcome(event, ...)
+    local parentSequence = self.parent
     -- Sets the promised outcome event (a string) of this task.
     self.registeredOutcome = event
     -- Notify the taskSequence that this task has a new registeredEvent.
