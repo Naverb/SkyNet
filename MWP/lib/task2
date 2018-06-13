@@ -1,5 +1,5 @@
---[[ This is the new API to handle tasks (listeners) and taskSequences (taskHandlers).
- We found the previous API had some major shortcomings, including:
+--[[ 
+    This is the new API to handle tasks (listeners) and taskSequences (taskHandlers). We found the previous API had some major shortcomings, including:
       1) When a function yielded within a listener, the task_co would intercept the yield before the BIOS coroutine could receive the event. This prevented APIs like GPS, GPS2, and rednet from working.
       2) We needed to modify attributes of a parent taskHandler from within a specific listener. So we need to find a clean and simple way to pass a parent object (taskSequence) to child objects (task).
 ]]--
@@ -20,25 +20,30 @@ end
 
 function yielding_object:yield(resumeEvent, ...)
     -- Yields the yielding object to be intercepted by the parent yielding object. Passes resumeEvent info to notify the parent of the conditions necessary to resume this.
-    self.status = 'cold'
     self.resumeEvent = resumeEvent or 'nullEvent' -- If resumeEvent is nil, we assume that this yielding object can be resumed at any time.
-    -- Now we hand control back to the parent.
-    coroutine.yield(resumeEvent, ...)
+    -- Now we hand control back to self:run or back to the parent (see self:run).
+    return coroutine.yield(resumeEvent, ...)
 end
 
 function yielding_object:registerParent(parent)
     -- This method allows us to set the parent taskSequence as a constant attribute of self.
-    self.parent = parent
+
+    -- NOTE: This forces parent to be a single table. Hence, the current version of this method does not allow a yielding_object to be registered with more than one parent.
+    self.parent = parent -- Consult https://www.lua.org/pil/2.5.html
 end
 
 task = {
     name = 'untitled_task',
     registeredOutcome = 'none',
-    resumeEvent = 'nullEvent',
-    enabled = true
+    resumeEvent = 'nullEvent', -- We don't want to set this to nil because we don't want to through an error trying to reference nil, but we do want to differentiate between a task with a specific resumeEvent and one without a nontrivial resumeEvent.
+    enabled = true,
+
+    -- This is the default task_co. It's completely useless, but we have it to avoid a nil reference.
+    task_co = coroutine.create(function () return true end)
 }
 
-setmetatable(task, yielding_object)
+
+setmetatable(task, task)
 task.__index = yielding_object -- We tell task to extend yielding_object.
 
 function task.conditon()
@@ -52,7 +57,7 @@ function task:checkCondition(event, ...)
     if event == self.resumeEvent and self.enabled then --self.enabled then
             return self:conditon() -- Yes, Brevan, that is *conditon*
     end
-    -- If we reach this line, the task is enabled, but we did not receive the event that we needed to resume. This shouldn't happen, so we report it.
+    -- If we reach this line we did not receive the event that we needed to resume. This shouldn't happen, so we report it.
     error("Task " .. self.name .. " failed to receive it's proper resume event. Needed " .. self.resumeEvent .. " but received " .. event .. ".")
 
     -- If the task is not enabled, we do not let the task execute.
@@ -60,16 +65,20 @@ function task:checkCondition(event, ...)
 end
 
 function task:run(event, ...)
-    self.status = 'hot'
     -- Starts/resumes the task_co to complete the task's action.
     if self:checkCondition(event) then
         -- Execute task_co, return the results.
+        self.latestResults = table.pack(coroutine.resume(self.task_co, self, ...)) -- We pass self so that we can manipulate attributes of the task from within task_co.
+        local status = coroutine.status(self.task_co)
+
+        return status, table.unpack(self.latestResults)
     else
-        -- Report to taskHandler that conditions for this task are not satisfied and task did not run.
+        -- Report to parent that conditions for this task are not satisfied and task did not run.
     end
 end
 
 function task:registerOutcome(event, ...)
+    -- This method is to be called whenever we need to change registeredOutcome of a task after it has been created.
     local parentSequence = self.parent
     -- Sets the promised outcome event (a string) of this task.
     self.registeredOutcome = event
@@ -87,11 +96,19 @@ function task:disable()
     self.enabled = false
 end
 
-function task:new()
+function task:new(name, action, registeredOutcome)
     --This is the constructor for task.
+    local obj = {}
 
+    setmetatable(obj, obj)
+    obj.__index = task -- I think this how we can handle inheritance.
+
+    obj.name = name
+    obj.registeredOutcome = registeredOutcome
     -- Here we construct task_co.
+    obj.task_co = coroutine.create(action)
 
+    return obj
 end
 
 taskSequence = {
@@ -100,10 +117,10 @@ taskSequence = {
     enabled = true
 }
 
-setmetatable(taskSequence, task)
+setmetatable(taskSequence, taskSequence)
 taskSequence.__index = task -- We tell taskSequence to extend task.
 
-function taskSequence:queueTask()
+function taskSequence:queueTask(task)
     -- Add a task to the taskSequence, to be completed after all other tasks in nextTask have been run.
 end
 
@@ -116,6 +133,7 @@ function taskSequence:run()
         -- Pull the next task from the stack:
         for i, task in ipairs(nextTask) do
             local taskResult = task:run(thisSequence)
+            -- Here we need to process taskResult to determine how task yielded/terminated. Does it need to resume? What event does it need for resumeEvent? Is there any other important information stored in taskResult?
         end
     end
 
