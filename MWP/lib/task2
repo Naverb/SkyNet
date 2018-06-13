@@ -28,9 +28,7 @@ end
 
 function yielding_object:registerParent(parent)
     -- This method allows us to set the parent taskSequence as a constant attribute of self.
-
-    -- That is... if we can find a way to set the attribute to a reference pointer. Otherwise, this method is complete garbage and should be scrapped.
-    self.parent = POINTER_TO_PARENTSEQUENCE_TABLE
+    self.parent = parent
 end
 
 task = {
