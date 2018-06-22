@@ -9,7 +9,8 @@
 yielding_object = {
     name = 'untitled_yielding_object',
     resumeEvent = 'nullEvent',
-    status = 'cold'
+    status = 'cold',
+    indexInParent = -1 -- This is negative 1 because -1 would never be indexed by the array.
 }
 
 setmetatable(yielding_object, yielding_object)
@@ -30,6 +31,7 @@ function yielding_object:registerParent(parent)
 
     -- NOTE: This forces parent to be a single table. Hence, the current version of this method does not allow a yielding_object to be registered with more than one parent.
     self.parent = parent -- Consult https://www.lua.org/pil/2.5.html
+    self.indexInParent = nil -- Fix this?
 end
 
 task = {
@@ -46,7 +48,7 @@ task = {
 setmetatable(task, task)
 task.__index = yielding_object -- We tell task to extend yielding_object.
 
-function task.conditon()
+function task:conditon()
     -- This is the default conditon of a task, it just returns true.
     return true
 end
@@ -114,25 +116,71 @@ end
 taskSequence = {
     name = 'untitled_taskSequence',
     registeredOutcome = 'sequence_status',
-    enabled = true
+    enabled = true,
+    tasks = {},
+    pendingTasks = {}
 }
+
+tasksMt = {
+    __index = function(tasksTable, event)
+        return function(self, event)
+            self:yield(event)
+        end, true -- The second parameter is caught and used to determine whether the taskSequence could find a task to satisfy event.
+    end
+}
+
+setmetatable(taskSequence.task, tasksMt) -- This allows us to handle the case where the taskSequence does not contain a task to handle a particular event.
+
+pendingTasksMt = {
+    __add = function (_pendingtasks,task)
+        table.insert(_pendingtasks, task)
+        task:registerParent(_pendingtasks)
+
+        return _pendingtasks
+    end
+}
+
+setmetatable(taskSequence.pendingTasks, pendingTasksMt) --This allows us to do some cool syntactical sugar.
 
 setmetatable(taskSequence, taskSequence)
 taskSequence.__index = task -- We tell taskSequence to extend task.
 
 function taskSequence:queueTask(task)
+    local newSequence = self.pendingTasks + task
     -- Add a task to the taskSequence, to be completed after all other tasks in nextTask have been run.
 end
 
-function taskSequence:run()
-    local thisSequence = self
+function checkEventFulfillment(event)
+    local taskOrFunc, checkFailure = self.tasks[event]
+    if not checkFailure then
+        return function(self)
+            self:queueTask(taskOrFunc)
+        end
+    else 
+        return taskOrFunc 
+    end
+end
+
+function taskSequence:run(event)
     -- Iterates through nextTask and runs tasks.
     if self.enabled then
         self.status = 'hot'
 
         -- Pull the next task from the stack:
-        for i, task in ipairs(nextTask) do
-            local taskResult = task:run(thisSequence)
+        for i, task in ipairs(self.pendingTasks) do
+            local taskResult = {task:run(event)}
+
+            if taskResult[1] == 'dead' then -- We have detected that the task has finished its task_co.
+                task:disable()
+                -- We probably want to remove the task from the task sequence now.
+            elseif taskResult[1] == 'yielded' then -- We have detected that the task is waiting for an event to resume it.
+                -- Do we want to yield the taskSequence right now to satisfy the event condition needed for the yielded task, or do we complete the rest of pendingTasks in order to maximize the amount of tasks done before yielding?
+                
+                local nextAction = self.checkEventFulfillment[task.resumeEvent]
+
+                nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
+            end
+
             -- Here we need to process taskResult to determine how task yielded/terminated. Does it need to resume? What event does it need for resumeEvent? Is there any other important information stored in taskResult?
         end
     end
@@ -142,6 +190,7 @@ end
 function taskSequence:registerTask(task)
     -- Registers a task to its registeredOutcome
     -- Move task to the table self.tasks[task.registeredOutcome]
+    table.insert(self.tasks[task.registeredOutcome], task)
 end
 
 function taskSequence:new()
