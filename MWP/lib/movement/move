@@ -1,4 +1,9 @@
 
+-- Standard Vectors
+local I = vector.new(1,0,0)
+local J = vector.new(0,1,0)
+local K = vector.new(0,0,1)
+
 
 ------------------------------------------------------
 ----------------- HELPER FUNCTIONS -------------------
