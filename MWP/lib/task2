@@ -125,7 +125,7 @@ tasksMt = {
     __index = function(tasksTable, event)
         return function(self, event)
             self:yield(event)
-        end, true -- The second parameter is caught and used to determine whether the taskSequence could find a task to satisfy event.
+        end, false -- The second parameter is caught and used to determine whether the taskSequence could find a task to satisfy event.
     end
 }
 
@@ -151,8 +151,8 @@ function taskSequence:queueTask(task)
 end
 
 function checkEventFulfillment(event)
-    local taskOrFunc, checkFailure = self.tasks[event]
-    if not checkFailure then
+    local taskOrFunc, ok = self.tasks[event]
+    if ok then
         return function(self)
             self:queueTask(taskOrFunc)
         end
