@@ -2,7 +2,7 @@
 
 -- Waypoints
     local fuelingStation = waypoint.waypoint:new('fuelingStation', vector.new(-145,93,375))
-    local storageDepot = waypoint.waypoint:new( 'storageDepot',vector.new(0,0,0) )
+    local storageDepot = waypoint.waypoint:new('storageDepot',vector.new(0,0,0) )
 
 
 

@@ -1,8 +1,18 @@
 --[[ 
     This is the new API to handle tasks (listeners) and taskSequences (taskHandlers). We found the previous API had some major shortcomings, including:
-      1) When a function yielded within a listener, the task_co would intercept the yield before the BIOS coroutine could receive the event. This prevented APIs like GPS, GPS2, and rednet from working.
-      2) We needed to modify attributes of a parent taskHandler from within a specific listener. So we need to find a clean and simple way to pass a parent object (taskSequence) to child objects (task).
+    1) When a function yielded within a listener, the task_co would intercept the yield before the BIOS coroutine could receive the event. This prevented APIs like GPS, GPS2, and rednet from working.
+    2) We needed to modify attributes of a parent taskHandler from within a specific listener. So we need to find a clean and simple way to pass a parent object (taskSequence) to child objects (task).
 ]]--
+
+--[[ 
+    Description of control flow in handy-dandy natural language:
+
+    -> taskFoo: Hi, I need resumeEvent
+    -> PTS (parent task sequence): Ok, let me see if I can give you that
+    -> PTS: here, taskBar promises registeredOutcome resumeEvent
+    -> PTS (if not): sorry, let me ask someone else.
+]]--
+
 
 -- Perhaps we want to make both the task and the taskSequence classes extensions of a general, yielding_object class. That way we can write one yielding function for both classes.
 
@@ -45,6 +55,7 @@ task = {
 }
 
 
+
 setmetatable(task, task)
 task.__index = yielding_object -- We tell task to extend yielding_object.
 
@@ -59,6 +70,9 @@ function task:checkCondition(event, ...)
     if event == self.resumeEvent and self.enabled then --self.enabled then
             return self:conditon() -- Yes, Brevan, that is *conditon*
     end
+
+    -- If conditon is false, make sure we save passed parameters from the parent sequence, so that we can execute this task ASAP (when conditon is true) when the taskSequence passes a different resumeEvent later on.
+
     -- If we reach this line we did not receive the event that we needed to resume. This shouldn't happen, so we report it.
     error("Task " .. self.name .. " failed to receive it's proper resume event. Needed " .. self.resumeEvent .. " but received " .. event .. ".")
 
@@ -83,9 +97,13 @@ function task:registerOutcome(event, ...)
     -- This method is to be called whenever we need to change registeredOutcome of a task after it has been created.
     local parentSequence = self.parent
     -- Sets the promised outcome event (a string) of this task.
+    local previousOutcome = self.registeredOutcome
     self.registeredOutcome = event
+
+    -- Note, events are returned when tasks are yielded (at least, that's the intention), so a task's registeredOutcome may change as the task yields and resumes. Keep this in mind, make sure the parent knows that the task is updating it's registeredOutcome.
+
     -- Notify the taskSequence that this task has a new registeredEvent.
-    parentSequence:registerTask(self)
+    parentSequence:registerTask(self, previousOutcome)
 end
 
 function task:enable()
@@ -100,6 +118,10 @@ end
 
 function task:new(name, action, registeredOutcome)
     --This is the constructor for task.
+
+    -- taskFoo = task:new('foo', function() doStuff() end, 'fooEvent')
+    -- taskFoo = task:new('foo', doStuff, 'fooEvent')
+
     local obj = {}
 
     setmetatable(obj, obj)
@@ -113,6 +135,7 @@ function task:new(name, action, registeredOutcome)
     return obj
 end
 
+
 taskSequence = {
     name = 'untitled_taskSequence',
     registeredOutcome = 'sequence_status',
@@ -125,11 +148,11 @@ tasksMt = {
     __index = function(tasksTable, event)
         return function(self, event)
             self:yield(event)
-        end, false -- The second parameter is caught and used to determine whether the taskSequence could find a task to satisfy event.
+        end, true -- The second parameter is caught and used to determine whether the taskSequence could find a task to satisfy event.
     end
 }
 
-setmetatable(taskSequence.task, tasksMt) -- This allows us to handle the case where the taskSequence does not contain a task to handle a particular event.
+setmetatable(taskSequence.tasks, tasksMt) -- This allows us to handle the case where the taskSequence does not contain a task to handle a particular event.
 
 pendingTasksMt = {
     __add = function (_pendingtasks,task)
@@ -140,7 +163,7 @@ pendingTasksMt = {
     end
 }
 
-setmetatable(taskSequence.pendingTasks, pendingTasksMt) --This allows us to do some cool syntactical sugar.
+setmetatable(taskSequence.pendingTasks, pendingTasksMt) --This allows us to do some sexy syntactical sugar, sweetie (x5 alliteration combo).
 
 setmetatable(taskSequence, taskSequence)
 taskSequence.__index = task -- We tell taskSequence to extend task.
@@ -150,14 +173,14 @@ function taskSequence:queueTask(task)
     -- Add a task to the taskSequence, to be completed after all other tasks in nextTask have been run.
 end
 
-function checkEventFulfillment(event)
-    local taskOrFunc, ok = self.tasks[event]
-    if ok then
+function taskSequence:checkEventFulfillment(event)
+    local taskFunc, bad = self.tasks[event]
+    if not bad then
         return function(self)
-            self:queueTask(taskOrFunc)
+            self:queueTask(taskFunc)
         end
     else 
-        return taskOrFunc 
+        return taskFunc 
     end
 end
 
@@ -187,10 +210,11 @@ function taskSequence:run(event)
 
 end
 
-function taskSequence:registerTask(task)
+function taskSequence:registerTask(task, previousOutcome)
     -- Registers a task to its registeredOutcome
     -- Move task to the table self.tasks[task.registeredOutcome]
-    table.insert(self.tasks[task.registeredOutcome], task)
+    self.tasks[previousOutcome] = nil
+    self.tasks[task.registeredOutcome] = task --If the key doesn't exist, does this create the key?
 end
 
 function taskSequence:new()
