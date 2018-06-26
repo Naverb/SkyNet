@@ -7,10 +7,13 @@
 --[[ 
     Description of control flow in handy-dandy natural language:
 
-    -> taskFoo: Hi, I need resumeEvent
-    -> PTS (parent task sequence): Ok, let me see if I can give you that
-    -> PTS: here, taskBar promises registeredOutcome resumeEvent
-    -> PTS (if not): sorry, let me ask someone else.
+    taskFoo: Hi, to finish my action, I need resumeEvent.
+    PTS (parent task sequence): Ok, let me see if I have a task that gives you that...
+        (if yes): here, taskBar promises reigsteredOutcome resumeEvent. Let me run it real quick and get back to you.
+        (if no): sorry, I need to ask someone else. You'll have to wait a bit.
+    PTS (to its own parent, PPTS): Hi, I need resumeEvent, can you give me that?
+    PPTS: Let me check..
+        [ The process repeats until resumeEvent is fullfilled.]
 ]]--
 
 
@@ -19,8 +22,7 @@
 yielding_object = {
     name = 'untitled_yielding_object',
     resumeEvent = 'nullEvent',
-    status = 'cold',
-    indexInParent = -1 -- This is negative 1 because -1 would never be indexed by the array.
+    status = 'cold'
 }
 
 setmetatable(yielding_object, yielding_object)
@@ -30,8 +32,18 @@ yielding_object.__index = function (t, k)
 end
 
 function yielding_object:yield(resumeEvent, ...)
+
+    local previousResumeEvent = self.resumeEvent
+    local parent = self.parent
     -- Yields the yielding object to be intercepted by the parent yielding object. Passes resumeEvent info to notify the parent of the conditions necessary to resume this.
     self.resumeEvent = resumeEvent or 'nullEvent' -- If resumeEvent is nil, we assume that this yielding object can be resumed at any time.
+
+    -- IT'S CRITICAL THAT THE TASK HAS A PARENT FOR THESE NEXT FEW TASKS TO EVEN MAKE SENSE.
+    -- Otherwise, the metatable for yielding_object should catch the nil reference error, so no hard feelings if a task or taskSequence does not have a parent.
+
+    table.remove(parent.pendingTasks[previousResumeEvent], self.name) -- Is this the correct syntax?
+    parent.pendingTasks[self.resumeEvent][self.name] = self -- Essentially, we are moving the current task to the proper category of the parent's pendingTasks table.
+
     -- Now we hand control back to self:run or back to the parent (see self:run).
     return coroutine.yield(resumeEvent, ...)
 end
@@ -141,7 +153,9 @@ taskSequence = {
     registeredOutcome = 'sequence_status',
     enabled = true,
     tasks = {},
-    pendingTasks = {}
+    pendingTasks = {
+        -- This table is organized into keys (labelling resumeEvents) that categorize tasks into the resumeEvent they need to run.
+    }
 }
 
 tasksMt = {
@@ -190,20 +204,21 @@ function taskSequence:run(event)
         self.status = 'hot'
 
         -- Pull the next task from the stack:
-        for i, task in ipairs(self.pendingTasks) do
-            local taskResult = {task:run(event)}
+        for eventName, eventTable in pairs(self.pendingTasks) do
+            for _, task in pairs(eventTable) do
+                local taskResult = {task:run(event)}
 
-            if taskResult[1] == 'dead' then -- We have detected that the task has finished its task_co.
-                task:disable()
-                -- We probably want to remove the task from the task sequence now.
-            elseif taskResult[1] == 'yielded' then -- We have detected that the task is waiting for an event to resume it.
-                -- Do we want to yield the taskSequence right now to satisfy the event condition needed for the yielded task, or do we complete the rest of pendingTasks in order to maximize the amount of tasks done before yielding?
-                
-                local nextAction = self.checkEventFulfillment[task.resumeEvent]
+                if taskResult[1] == 'dead' then -- We have detected that the task has finished its task_co.
+                    task:disable()
+                    -- We probably want to remove the task from the task sequence now.
+                elseif taskResult[1] == 'yielded' then -- We have detected that the task is waiting for an event to resume it.
+                    -- Do we want to yield the taskSequence right now to satisfy the event condition needed for the yielded task, or do we complete the rest of pendingTasks in order to maximize the amount of tasks done before yielding?
+                    
+                    local nextAction = self.checkEventFulfillment[task.resumeEvent]
 
-                nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
+                    nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
+                end
             end
-
             -- Here we need to process taskResult to determine how task yielded/terminated. Does it need to resume? What event does it need for resumeEvent? Is there any other important information stored in taskResult?
         end
     end
