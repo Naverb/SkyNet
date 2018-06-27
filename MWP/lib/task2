@@ -32,10 +32,11 @@ yielding_object.__index = function (t, k)
 end
 
 function yielding_object:yield(resumeEvent, ...)
+    -- Yields the yielding object to be intercepted by the parent yielding object. Passes resumeEvent info to notify the parent of the conditions necessary to resume this.
 
     local previousResumeEvent = self.resumeEvent
     local parent = self.parent
-    -- Yields the yielding object to be intercepted by the parent yielding object. Passes resumeEvent info to notify the parent of the conditions necessary to resume this.
+    
     self.resumeEvent = resumeEvent or 'nullEvent' -- If resumeEvent is nil, we assume that this yielding object can be resumed at any time.
 
     -- IT'S CRITICAL THAT THE TASK HAS A PARENT FOR THESE NEXT FEW TASKS TO EVEN MAKE SENSE.
@@ -53,7 +54,6 @@ function yielding_object:registerParent(parent)
 
     -- NOTE: This forces parent to be a single table. Hence, the current version of this method does not allow a yielding_object to be registered with more than one parent.
     self.parent = parent -- Consult https://www.lua.org/pil/2.5.html
-    self.indexInParent = nil -- Fix this?
 end
 
 task = {
