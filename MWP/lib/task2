@@ -62,8 +62,12 @@ task = {
     resumeEvent = 'nullEvent', -- We don't want to set this to nil because we don't want to through an error trying to reference nil, but we do want to differentiate between a task with a specific resumeEvent and one without a nontrivial resumeEvent.
     enabled = true,
 
-    -- This is the default task_co. It's completely useless, but we have it to avoid a nil reference.
-    task_co = coroutine.create(function () return true end)
+    -- This is the default task_co. It's completely useless, but we have it to avoid a nil reference.,
+    action = function ()
+        return true
+    end,
+
+    task_co = coroutine.create(action)
 }
 
 
@@ -128,6 +132,18 @@ function task:disable()
     self.enabled = false
 end
 
+function task:resurrect(resetResumeEvent)
+    -- Recreate the task_co so that it can be executed again (after task_co returns)
+    self.task_co = coroutine.create(self.action)
+
+    if resetResumeEvent then
+        self.resumeEvent = 'nullEvent'
+    end
+
+    return true
+end
+
+
 function task:new(name, action, registeredOutcome)
     --This is the constructor for task.
 
@@ -142,7 +158,8 @@ function task:new(name, action, registeredOutcome)
     obj.name = name
     obj.registeredOutcome = registeredOutcome
     -- Here we construct task_co.
-    obj.task_co = coroutine.create(action)
+    obj.action = action
+    obj.task_co = coroutine.create(obj.action)
 
     return obj
 end
@@ -154,6 +171,7 @@ taskSequence = {
     enabled = true,
     tasks = {},
     pendingTasks = {
+        taskSequence = taskSequence
         -- This table is organized into keys (labelling resumeEvents) that categorize tasks into the resumeEvent they need to run.
     }
 }
@@ -170,10 +188,15 @@ setmetatable(taskSequence.tasks, tasksMt) -- This allows us to handle the case w
 
 pendingTasksMt = {
     __add = function (_pendingtasks,task)
-        table.insert(_pendingtasks, task)
-        task:registerParent(_pendingtasks)
+
+        table.insert(_pendingtasks[task.resumeEvent], task) -- Can we insert to a table that doesn't necessarily exist yet?
+        task:registerParent(_pendingtasks.taskSequence)
 
         return _pendingtasks
+    end,
+
+    __index = function(k,t)
+        print('Attempted to execute tasks of event ' .. k .. 'despite ' .. t .. ' not having any such pending tasks.')
     end
 }
 
@@ -199,14 +222,15 @@ function taskSequence:checkEventFulfillment(event)
 end
 
 function taskSequence:run(event)
+
+    -- We need to make this method a coroutine if we are to make a taskSequence a proper yielding_object (i.e. yes).
+
     -- Iterates through nextTask and runs tasks.
     if self.enabled then
         self.status = 'hot'
 
-        -- Pull the next task from the stack:
-        for eventName, eventTable in pairs(self.pendingTasks) do
-            for _, task in pairs(eventTable) do
-                local taskResult = {task:run(event)}
+        for _, task in pairs(self.pendingTasks[event]) do
+            local taskResult = {task:run(event)}
 
                 if taskResult[1] == 'dead' then -- We have detected that the task has finished its task_co.
                     task:disable()
@@ -218,7 +242,6 @@ function taskSequence:run(event)
 
                     nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
                 end
-            end
             -- Here we need to process taskResult to determine how task yielded/terminated. Does it need to resume? What event does it need for resumeEvent? Is there any other important information stored in taskResult?
         end
     end
@@ -233,6 +256,13 @@ function taskSequence:registerTask(task, previousOutcome)
 end
 
 function taskSequence:new()
+
+    local obj = {}
+
+    local obj.pendingTasks = {
+        taskSequence = obj
+    }
+
     --This is the constructor for taskSequence. I think we should extend the task class to make taskSequence. That way, we can yield the taskSequence and insert it into large taskSequences.
 
     -- Make sure to construct the coroutine to handle the tasks.
