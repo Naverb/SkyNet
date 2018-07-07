@@ -34,7 +34,7 @@ end
 function yielding_object:yield(resumeEvent, ...)
     -- Yields the yielding object to be intercepted by the parent yielding object. Passes resumeEvent info to notify the parent of the conditions necessary to resume this.
     local parent = self.parent
-    parent:unQueueTask(self)
+    parent:unqueueTask(self)
     
     self.resumeEvent = resumeEvent or 'nullEvent' -- If resumeEvent is nullEvent, we assume that this yielding object can be resumed at any time.
     parent:queueTask(self)
@@ -210,7 +210,7 @@ function taskSequence:queueTask(task)
     return newSequence
 end
 
-function taskSequence:unQueueTask(task)
+function taskSequence:unqueueTask(task)
     local newSequence = self.pendingTasks - task
 
     return newSequence
