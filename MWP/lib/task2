@@ -140,7 +140,7 @@ function task:resurrect(resetResumeEvent)
 end
 
 
-function task:new(name, action, registeredOutcome)
+function task:new(name, conditon, action, registeredOutcome)
     --This is the constructor for task.
 
     -- taskFoo = task:new('foo', function() doStuff() end, 'fooEvent')
@@ -155,6 +155,7 @@ function task:new(name, action, registeredOutcome)
     obj.registeredOutcome = registeredOutcome
     -- Here we construct task_co.
     obj.action = action
+    obj.conditon = conditon
     obj.task_co = coroutine.create(obj.action)
 
     return obj

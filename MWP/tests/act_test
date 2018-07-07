@@ -31,21 +31,6 @@ else
   print('Nah bro')
 end
 
-point1 = waypoint.waypoint:new('point1',corner1)
-point2 = waypoint.waypoint:new('point2',corner2)
-point3 = waypoint.waypoint:new('point3',corner3)
-point4 = waypoint.waypoint:new('point4',corner4)
--- home = waypoint.waypoint:new('home', home)
+point1 = waypoint.waypointTask:new('point1',corner1)
 
-print('Testing waypoint creation: ')
-print(point4.location)
-print('Creating path...')
-path = path.path:new('aaa')
-print('Appending waypoints to '.. path.name  ..'...')
-path:append(point1)
-path:append(point2)
-path:append(point3)
-path:append(point4)
--- path:append(home)
 
-path:start(1, false)

@@ -72,7 +72,7 @@ end
 refuelListener = {}
 
 function refuelListener:new(_name)
-    local obj = task.listener:new(_name, refuelIfNecessary, getFuel)
+    local obj = task2.task:new(_name, refuelIfNecessary, getFuel, 'sufficient_fuel')
     return obj
 end
 
@@ -108,7 +108,7 @@ end
 storageListener = {}
 
 function storageListener:new(_name)
-    local obj = task.listener:new(_name, storeAllItemsCondition, storeAllItems)
+    local obj = task2.task:new(_name, storeAllItemsCondition, storeAllItems, 'sufficient_storage')
     return obj
 end
 

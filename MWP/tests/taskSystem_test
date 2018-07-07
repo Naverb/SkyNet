@@ -1,0 +1,29 @@
+-- APIS
+print('##########################')
+print('Loading task library')
+os.loadAPI('SkyNet/MWP/lib/task2')
+print('Loading gps2 library')
+os.loadAPI("SkyNet/MWP/lib/movement/gps2")
+print('Loading move library')
+os.loadAPI('SkyNet/MWP/lib/movement/move')
+print('Loading waypoint library')
+os.loadAPI("SkyNet/MWP/lib/movement/waypoint")
+print('Loading act library')
+os.loadAPI('SkyNet/MWP/lib/act')
+print('##########################')
+
+
+corner1 = vector.new(-114,91,359)
+corner2 = vector.new(-178,91,359)
+corner3 = vector.new(-178,91,427)
+corner4 = vector.new(-114,91,423)
+
+home = vector.new(-119,95,366)
+
+wp = waypoint.waypointTask:new('Home', home)
+
+tS = task2.taskSequence:new('main_sequence')
+
+tS:queueTask(wp)
+
+tS:dispatch{dispatchAll = true}

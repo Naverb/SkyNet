@@ -33,6 +33,16 @@ function waypoint:new(_name, loc)
     return obj
 end
 
+waypointTask = {}
+function waypointTask:new(name, loc)
+    
+    local wp = waypoint:new(name,loc)
+    local obj = task2.task:new(name, nil, wp.go)
+    obj.waypoint = wp
+
+    return obj
+end
+
 print('Loading previous_location')
 -- We create this global variable so that we may work with the robot's prior location
 local err, loc = gps2.getLocation()

@@ -14,17 +14,17 @@ local K = vector.new(0,0,1)
 --      moving a single block. That way, we can deal with event interrupts, etc..
 
 forward = function ()
-    coroutine.yield('turtle_move_forward')
+    coroutine.yield('sufficient_fuel')
     return turtle.forward()
 end
 
 up = function ()
-    coroutine.yield('turtle_move_up')
+    coroutine.yield('sufficient_fuel')
     return turtle.up()
 end
 
 down = function ()
-    coroutine.yield('turtle_move_down')
+    coroutine.yield('sufficient_fuel')
     return turtle.down()
 end
 
@@ -116,6 +116,19 @@ function goTo(destination, _breakBlocks, _tolerance)
     -- FIX ME until trajectory:round():length() < tolerance
 end
 
+moveTask = {}
+function moveTask:new(destination, arg)
+    local name = arg.name or 'untitled_move_task'
+    local breakBlocks = arg.breakBlocks or false
+    local tolerance = arg.tolerance or 1
+
+    local moveFunction = function()
+        goTo(destination, breakBlocks, tolerance)
+    end
+
+    return task2.task:new(name, nil, moveFunction)
+end
+
 ------------------------------------------------------
 -------------- ENVIROMENTAL ORIENTATION --------------
 
@@ -129,5 +142,22 @@ function orientChunk()
         return loc.y
     else
         print("Error in Location")
+    end
+end
+
+orientChunkTask = {}
+function orientChunkTask:new()
+    local err, loc = gps2.getLocation()
+    local dest
+    if not err then
+        dest = vector.new(loc.x - loc.x % 16,
+                          loc.y,
+                          lox.z - loc.z % 16)
+        return moveTask:new(dest, {
+            name = 'orient_chunk_task',
+            breakBlocks = true
+        })
+    else
+        print('Error getting location for orientChunkTask constructor.')
     end
 end
