@@ -111,7 +111,8 @@ function task:registerOutcome(event, ...)
     self.registeredOutcome = event
 
     -- Notify the taskSequence that this task has a new registeredEvent.
-    parentSequence:registerTask(self, previousOutcome)
+	parentSequence:registerTask(self, previousOutcome)
+		--- registerTask updates to new registered outcome, and tells the parent the task is not promising the previousOutcome anymore
 end
 
 function task:enable()
@@ -186,7 +187,7 @@ pendingTasksMt = {
         return _pendingtasks
     end,
 
-    _sub = function(_pendingtasks, task)
+    __sub = function(_pendingtasks, task)
         table.remove(self.pendingTasks[task.resumeEvent], task.name)
 
         task:registerParent(_pendingtasks.taskSequence)

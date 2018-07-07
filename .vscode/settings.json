@@ -1,6 +1,6 @@
 {
-    "lua.preferLuaCheckErrors": true,
-    "lua.luacheckPath": "C:\\luacheck.exe",
+    //"lua.preferLuaCheckErrors": true,
+    //"lua.luacheckPath": "C:\\luacheck.exe",
     "files.associations": {
         "*": "lua"
     }
