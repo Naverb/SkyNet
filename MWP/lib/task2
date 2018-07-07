@@ -165,7 +165,7 @@ taskSequence = {
     tasks = {},
     pendingTasks = {
         -- This table is organized into keys (labelling resumeEvents) that categorize tasks into the resumeEvent they need to run.
-        taskSequence = taskSequence
+        enclosing_task_sequence = taskSequence
     }
 }
 
@@ -183,7 +183,7 @@ pendingTasksMt = {
     __add = function (_pendingtasks,task)
 
         table.insert(_pendingtasks[task.resumeEvent], task) -- Can we insert to a table that doesn't necessarily exist yet?
-        task:registerParent(_pendingtasks.taskSequence)
+        task:registerParent(_pendingtasks.enclosing_task_sequence)
 
         return _pendingtasks
     end,
@@ -191,7 +191,7 @@ pendingTasksMt = {
     __sub = function(_pendingtasks, task)
         table.remove(self.pendingTasks[task.resumeEvent], task.name)
 
-        task:registerParent(_pendingtasks.taskSequence)
+        task:registerParent(_pendingtasks.enclosing_task_sequence)
 
         return _pendingtasks
     end,
@@ -312,7 +312,7 @@ function taskSequence:new(name)
     obj.name = name
     obj.tasks = {}
     obj.pendingTasks = {
-        taskSequence = obj
+        enclosing_task_sequence = obj
     }
 
     setmetatable(obj,obj)
