@@ -31,7 +31,7 @@ yielding_object.__index = function (t, k)
     error('Yielding object' .. t.name .. ' attempted to access nil value at '.. k .. '.')
 end
 
-function yielding_object:yield(resumeEvent, ...)
+function yielding_object:registerResumeEvent(resumeEvent, ...)
     -- Yields the yielding object to be intercepted by the parent yielding object. Passes resumeEvent info to notify the parent of the conditions necessary to resume this.
     local parent = self.parent
     parent:unqueueTask(self)
@@ -41,7 +41,6 @@ function yielding_object:yield(resumeEvent, ...)
 
     -- Now we hand control back to the parent (see self:run).
     self.status = 'cold'
-    return coroutine.yield(resumeEvent, ...)
 end
 
 function yielding_object:registerParent(parent)
@@ -94,6 +93,8 @@ function task:run(event, ...)
         -- Execute task_co, return the results.
         self.latestResults = table.pack(coroutine.resume(self.task_co, self, ...)) -- We pass self so that we can manipulate attributes of the task from within task_co.
         local status = coroutine.status(self.task_co)
+        local resumeEvent = self.latestResults[1] -- The first element of latestResults is ALWAYS resumeEvent
+        self:registerResumeEvent(resumeEvent)
 
         return status, table.unpack(self.latestResults)
     else
@@ -173,7 +174,8 @@ taskSequence = {
 tasksMt = {
     __index = function(tasksTable, event)
         return function(self, event)
-            self:yield(event)
+            self:registerResumeEvent(event)
+            coroutine.yield(event)
         end, true -- The second parameter is caught and used to determine whether the taskSequence could find a task to satisfy event.
     end
 }
