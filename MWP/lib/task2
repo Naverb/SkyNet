@@ -260,15 +260,15 @@ end
 function taskSequence:processTask(task)
     local taskResult = {task:run(event)}
 
-            if taskResult[1] == 'dead' then -- We have detected that the task has finished its task_co.
-                task:disable()
-                table.remove(self.pendingTasks[task.resumeEvent], task.name)
-            elseif taskResult[1] == 'yielded' or taskResult[1] == 'suspended' then -- We have detected that the task is waiting for an event to resume it.
-                
-                local nextAction = self.checkEventFulfillment[task.resumeEvent]
+    if taskResult[1] == 'dead' then -- We have detected that the task has finished its task_co.
+        task:disable()
+        table.remove(self.pendingTasks[task.resumeEvent], task.name)
+    elseif taskResult[1] == 'yielded' or taskResult[1] == 'suspended' then -- We have detected that the task is waiting for an event to resume it.
+        
+        local nextAction = self.checkEventFulfillment[task.resumeEvent]
 
-                nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
-            end
+        nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
+    end
 end
 
 function taskSequence:createTaskSequenceCoroutine(event)
