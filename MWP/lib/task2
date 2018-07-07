@@ -1,10 +1,10 @@
---[[ 
+--[[
     This is the new API to handle tasks (listeners) and taskSequences (taskHandlers). We found the previous API had some major shortcomings, including:
-    1) When a function yielded within a listener, the task_co would intercept the yield before the BIOS coroutine could receive the event. This prevented APIs like GPS, GPS2, and rednet from working.
+    1) When a coroutine yielded within a listener, the task_co would intercept the yield before the BIOS coroutine could receive the event. This prevented APIs like GPS, GPS2, and rednet from working.
     2) We needed to modify attributes of a parent taskHandler from within a specific listener. So we need to find a clean and simple way to pass a parent object (taskSequence) to child objects (task).
 ]]
 
---[[ 
+--[[
     Description of control flow in handy-dandy natural language:
 
     taskFoo: Hi, to finish my action, I need resumeEvent.
@@ -35,12 +35,11 @@ function yielding_object:registerResumeEvent(resumeEvent, ...)
     -- Yields the yielding object to be intercepted by the parent yielding object. Passes resumeEvent info to notify the parent of the conditions necessary to resume this.
     local parent = self.parent
     parent:unqueueTask(self)
-    
+
     self.resumeEvent = resumeEvent or 'nullEvent' -- If resumeEvent is nullEvent, we assume that this yielding object can be resumed at any time.
     parent:queueTask(self)
 
-    -- Now we hand control back to the parent (see self:run).
-    self.status = 'cold'
+
 end
 
 function yielding_object:registerParent(parent)
@@ -87,14 +86,17 @@ function task:checkCondition(event, ...)
     return false
 end
 
-function task:run(event, ...)
+function task:run(event)
     -- Starts/resumes the task_co to complete the task's action.
     if self:checkCondition(event) then
+        local latestPromise = self.parent.promises[event]
+        local latestPromisedData = latestPromise.data
         -- Execute task_co, return the results.
-        self.latestResults = table.pack(coroutine.resume(self.task_co, self, ...)) -- We pass self so that we can manipulate attributes of the task from within task_co.
+        self.latestResults = table.pack(coroutine.resume(self.task_co, self, table.unpack(latestPromisedData))) -- We pass self so that we can manipulate attributes of the task from within task_co.
         local status = coroutine.status(self.task_co)
         local resumeEvent = self.latestResults[1] -- The first element of latestResults is ALWAYS resumeEvent
         self:registerResumeEvent(resumeEvent)
+        self.status = 'cold'
 
         return status, table.unpack(self.latestResults)
     else
@@ -104,7 +106,7 @@ function task:run(event, ...)
     end
 end
 
-function task:registerOutcome(event, ...)
+function task:registerOutcome(event)
     -- This method is to be called whenever we need to change registeredOutcome of a task after it has been created.
     local parentSequence = self.parent
     -- Sets the promised outcome event (a string) of this task.
@@ -168,14 +170,18 @@ taskSequence = {
         -- This table is organized into keys (labelling resumeEvents) that categorize tasks into the resumeEvent they need to run.
         enclosing_task_sequence = taskSequence
     },
-    coroutines = {}
+    coroutines = {},
+    promises = {
+        enclosing_task_sequence = taskSequence
+    }
 }
 
 tasksMt = {
     __index = function(tasksTable, event)
         return function(self, event)
             self:registerResumeEvent(event)
-            coroutine.yield(event)
+            self.status = 'cold'
+            return coroutine.yield(event)
         end, true -- The second parameter is caught and used to determine whether the taskSequence could find a task to satisfy event.
     end
 }
@@ -189,6 +195,12 @@ pendingTasksMt = {
 }
 
 setmetatable(taskSequence.pendingTasks, pendingTasksMt)
+
+promisesMt = {
+    __index = enclosing_task_sequence.parent.promises
+}
+setmetatable(taskSequence.promises, promisesMt)
+
 setmetatable(taskSequence, taskSequence)
 taskSequence.__index = task -- We tell taskSequence to extend task.
 
@@ -210,14 +222,15 @@ function taskSequence:checkEventFulfillment(event)
         return function(self)
             self:queueTask(t)
         end
-    else 
-        return t 
+    else
+        return t
     end
 end
 
 function taskSequence:dispatch(arg)
     local event = arg.event or 'nullEvent'
     local dispatchAll = arg.dispatchAll or false
+
     if self.enabled then
         self.status = 'hot'
 
@@ -260,16 +273,25 @@ end
 
 function taskSequence:processTask(task)
     local taskResult = {task:run(event)}
+    local status = taskResult[1]
 
-    if taskResult[1] == 'dead' then -- We have detected that the task has finished its task_co.
+    if status == 'dead' then -- We have detected that the task has finished its task_co.
         task:disable()
         table.remove(self.pendingTasks[task.resumeEvent], task.name)
-    elseif taskResult[1] == 'yielded' or taskResult[1] == 'suspended' then -- We have detected that the task is waiting for an event to resume it.
-        
+        self:registerPromisedData(task.registeredOutcome, taskResult)
+    elseif status == 'yielded' or status == 'suspended' then -- We have detected that the task is waiting for an event to resume it.
+
         local nextAction = self.checkEventFulfillment[task.resumeEvent]
 
-        nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
+        local interceptedPromiseData = nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
     end
+end
+
+function taskSequence:registerPromisedData(registeredOutcome, promisedData)
+    self.promises[registeredOutcome] = {
+        fresh = true,
+         data = promisedData
+     }
 end
 
 function taskSequence:createTaskSequenceCoroutine(event)
@@ -303,12 +325,16 @@ function taskSequence:new(name)
         enclosing_task_sequence = obj
     }
     obj.coroutines = {}
+    obj.promises = {
+        enclosing_task_sequence = obj
+    }
 
     setmetatable(obj,obj)
     obj.__index = taskSequence
 
     setmetatable(obj.tasks, tasksMt)
     setmetatable(obj.pendingTasks, pendingTasksMt)
+    setmetatable(obj.promises, promisesMt)
 
     return obj
 end
