@@ -197,7 +197,9 @@ pendingTasksMt = {
 setmetatable(taskSequence.pendingTasks, pendingTasksMt)
 
 promisesMt = {
-    __index = enclosing_task_sequence.parent.promises
+    __index = function(tS, event) 
+        return enclosing_task_sequence.parent.promises[event] or coroutine.yield(event) --Either the parent has promises, or we have reached the top-level taskSequence (tS). In which case, coroutine.yield(event) will wait until the BIOs received event.
+    end
 }
 setmetatable(taskSequence.promises, promisesMt)
 
