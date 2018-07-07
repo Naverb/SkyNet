@@ -212,8 +212,9 @@ function taskSequence:checkEventFulfillment(event)
     end
 end
 
-function taskSequence:dispatch(event, dispatchAll)
-    dispatchAll = dispatchAll or false
+function taskSequence:dispatch(arg)
+    local event = arg.event
+    local dispatchAll = arg.dispatchAll or false
     if self.enabled then
         self.status = 'hot'
 
