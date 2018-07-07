@@ -318,5 +318,8 @@ function taskSequence:new(name)
     setmetatable(obj,obj)
     obj.__index = taskSequence
 
+    setmetatable(obj.tasks, tasksMt)
+    setmetatable(obj.pendingTasks, pendingTasksMt)
+
     return obj
 end
