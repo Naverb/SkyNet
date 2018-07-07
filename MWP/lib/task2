@@ -180,22 +180,6 @@ tasksMt = {
 setmetatable(taskSequence.tasks, tasksMt) -- This allows us to handle the case where the taskSequence does not contain a task to handle a particular event.
 
 pendingTasksMt = {
-    __add = function (_pendingtasks,task)
-
-        table.insert(_pendingtasks[task.resumeEvent], task) -- Can we insert to a table that doesn't necessarily exist yet?
-        task:registerParent(_pendingtasks.enclosing_task_sequence)
-
-        return _pendingtasks
-    end,
-
-    __sub = function(_pendingtasks, task)
-        table.remove(self.pendingTasks[task.resumeEvent], task.name)
-
-        task:registerParent(_pendingtasks.enclosing_task_sequence)
-
-        return _pendingtasks
-    end,
-
     __index = function(k,t)
         print('Attempted to execute tasks of event ' .. k .. 'despite ' .. t .. ' not having any such pending tasks.')
     end
@@ -207,15 +191,15 @@ setmetatable(taskSequence, taskSequence)
 taskSequence.__index = task -- We tell taskSequence to extend task.
 
 function taskSequence:queueTask(task)
-    local newSequence = self.pendingTasks + task
     -- Add a task to the taskSequence, to be completed after all other tasks in nextTask have been run.
-    return newSequence
+    table.insert(_pendingtasks[task.resumeEvent], task) -- Can we insert to a table that doesn't necessarily exist yet?
+    task:registerParent(_pendingtasks.enclosing_task_sequence)
+
 end
 
 function taskSequence:unqueueTask(task)
-    local newSequence = self.pendingTasks - task
-
-    return newSequence
+    table.remove(self.pendingTasks[task.resumeEvent], task.name)
+    task:registerParent(_pendingtasks.enclosing_task_sequence)
 end
 
 function taskSequence:checkEventFulfillment(event)
