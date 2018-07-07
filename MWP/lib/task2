@@ -33,14 +33,11 @@ end
 
 function yielding_object:yield(resumeEvent, ...)
     -- Yields the yielding object to be intercepted by the parent yielding object. Passes resumeEvent info to notify the parent of the conditions necessary to resume this.
-
-    local previousResumeEvent = self.resumeEvent
     local parent = self.parent
+    parent:unQueueTask(self)
     
     self.resumeEvent = resumeEvent or 'nullEvent' -- If resumeEvent is nullEvent, we assume that this yielding object can be resumed at any time.
-
-    table.remove(parent.pendingTasks[previousResumeEvent], self.name) -- Is this the correct syntax?
-    parent.pendingTasks[self.resumeEvent][self.name] = self 
+    parent:queueTask(self)
 
     -- Now we hand control back to the parent (see self:run).
     self.status = 'cold'
@@ -189,6 +186,14 @@ pendingTasksMt = {
         return _pendingtasks
     end,
 
+    _sub = function(_pendingtasks, task)
+        table.remove(self.pendingTasks[task.resumeEvent], task.name)
+
+        task:registerParent(_pendingtasks.taskSequence)
+
+        return _pendingtasks
+    end,
+
     __index = function(k,t)
         print('Attempted to execute tasks of event ' .. k .. 'despite ' .. t .. ' not having any such pending tasks.')
     end
@@ -202,6 +207,12 @@ taskSequence.__index = task -- We tell taskSequence to extend task.
 function taskSequence:queueTask(task)
     local newSequence = self.pendingTasks + task
     -- Add a task to the taskSequence, to be completed after all other tasks in nextTask have been run.
+    return newSequence
+end
+
+function taskSequence:unQueueTask(task)
+    local newSequence = self.pendingTasks - task
+
     return newSequence
 end
 
