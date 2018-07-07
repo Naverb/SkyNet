@@ -213,7 +213,7 @@ function taskSequence:checkEventFulfillment(event)
 end
 
 function taskSequence:dispatch(arg)
-    local event = arg.event
+    local event = arg.event or 'nullEvent'
     local dispatchAll = arg.dispatchAll or false
     if self.enabled then
         self.status = 'hot'
