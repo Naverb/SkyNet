@@ -165,6 +165,7 @@ taskSequence = {
     tasks = {},
     pendingTasks = {
         -- This table is organized into keys (labelling resumeEvents) that categorize tasks into the resumeEvent they need to run.
+        taskSequence = taskSequence
     }
 }
 
@@ -310,7 +311,9 @@ function taskSequence:new(name)
     local obj = {}
     obj.name = name
     obj.tasks = {}
-    obj.pendingTasks = {}
+    obj.pendingTasks = {
+        taskSequence = obj
+    }
 
     setmetatable(obj,obj)
     obj.__index = taskSequence
