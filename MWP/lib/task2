@@ -212,12 +212,13 @@ function taskSequence:checkEventFulfillment(event)
     end
 end
 
-function taskSequence:dispatch(event)
+function taskSequence:dispatch(event, dispatchAll)
+    dispatchAll = dispatchAll or false
     if self.enabled then
         self.status = 'hot'
 
         -- If event is not specified we dispatch all tasks.
-        if not event then
+        if dispatchAll then
             if not self.allTasks_co or coroutine.status(self.allTasks_co) == 'dead' then
                 self:createAllTasksCoroutine()
             end
