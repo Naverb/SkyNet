@@ -101,6 +101,8 @@ function task:run(event, ...)
         return status, table.unpack(self.latestResults)
     else
         -- Report to parent that conditions for this task are not satisfied and task did not run.
+        local status = coroutine.status(self.task_co)
+        return status
     end
 end
 
@@ -215,18 +217,34 @@ function taskSequence:checkEventFulfillment(event)
 end
 
 function taskSequence:dispatch(event)
+
+
     if self.enabled then
         self.status = 'hot'
 
-        if not self.coroutines[event] or coroutine.status(self.coroutines[event]) == 'dead' then
-            self:createTaskCoroutine(event)
+        -- If event is not specified we dispatch all tasks.
+        if not event then
+            if not self.allTasks_co or coroutine.status(self.allTasks_co) == 'dead' then
+                self:createAllTasksCoroutine()
+            end
+
+            self.latestResults = table.pack(coroutine.resume(self.allTasks_co))
+            status = coroutine.status(self.allTasks_co)
+
+            return status, table.unpack(self.latestResults)
+
+        else
+
+            if not self.coroutines[event] or coroutine.status(self.coroutines[event]) == 'dead' then
+                self:createTaskSequenceCoroutine(event)
+            end
+
+            self.latestResults = table.pack(coroutine.resume(self.coroutines[event]))
+            status = coroutine.status(self.coroutines[event])
+
+            return status, table.unpack(self.latestResults)
+
         end
-
-        self.latestResults = table.pack(coroutine.resume(self.coroutines[event]))
-        status = coroutine.status(self.coroutines[event])
-
-        return status, table.unpack(self.latestResults)
-
     end
 end
 
@@ -241,9 +259,9 @@ function taskSequence:registerTask(task, previousOutcome)
     task:registerParent(self)
 end
 
-function taskSequence:createTaskCoroutine(_event)
+function taskSequence:createTaskSequenceCoroutine(event)
     -- Creates the coroutine that cycles through all tasks of a given event.
-    self.coroutines[_event] = coroutine.create(function (event)
+    self.coroutines[event] = coroutine.create(function () -- Do we want to pass self as a parameter? If we don't this creates a closure of self that may not be up-to-date with the current taskSequence.
 
         for _, task in pairs(self.pendingTasks[event]) do
             local taskResult = {task:run(event)}
@@ -251,8 +269,7 @@ function taskSequence:createTaskCoroutine(_event)
             if taskResult[1] == 'dead' then -- We have detected that the task has finished its task_co.
                 task:disable()
                 -- We probably want to remove the task from the task sequence now.
-            elseif taskResult[1] == 'yielded' then -- We have detected that the task is waiting for an event to resume it.
-                -- Do we want to yield the taskSequence right now to satisfy the event condition needed for the yielded task, or do we complete the rest of pendingTasks in order to maximize the amount of tasks done before yielding?
+            elseif taskResult[1] == 'yielded' or taskResult[1] == 'suspended' then -- We have detected that the task is waiting for an event to resume it.
                 
                 local nextAction = self.checkEventFulfillment[task.resumeEvent]
 
@@ -261,6 +278,33 @@ function taskSequence:createTaskCoroutine(_event)
         end
 
     end)
+end
+
+function taskSequence:createAllTasksCoroutine()
+    self.allTasks_co = coroutine.create(function ()
+
+        for event, sequence in pairs(self.pendingTasks) do
+            for _, task in pairs(sequence) do
+                local taskResult = {task:run(event)}
+
+                if taskResult[1] == 'dead' then -- We have detected that the task has finished its task_co.
+                    task:disable()
+                    -- We probably want to remove the task from the task sequence now.
+                elseif taskResult[1] == 'yielded' or taskResult[1] == 'suspended' then -- We have detected that the task is waiting for an event to resume it.
+                    
+                    local nextAction = self.checkEventFulfillment[task.resumeEvent]
+
+                    nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
+                end
+            end
+        end
+    end)
+end
+
+function taskSequence:dispatchAllTasks()
+    for event, _ in pairs(self.pendingTasks) do
+        self.dispatch(event)
+    end
 end
 
 function taskSequence:new(name)
