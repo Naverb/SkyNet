@@ -277,7 +277,6 @@ function taskSequence:createTaskSequenceCoroutine(event)
 
         for _, task in pairs(self.pendingTasks[event]) do
                 self:processTask(task)
-            end
         end
 
     end)
