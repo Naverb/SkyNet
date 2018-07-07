@@ -166,7 +166,8 @@ taskSequence = {
     pendingTasks = {
         -- This table is organized into keys (labelling resumeEvents) that categorize tasks into the resumeEvent they need to run.
         enclosing_task_sequence = taskSequence
-    }
+    },
+    coroutines = {}
 }
 
 tasksMt = {
@@ -299,6 +300,7 @@ function taskSequence:new(name)
     obj.pendingTasks = {
         enclosing_task_sequence = obj
     }
+    obj.coroutines = {}
 
     setmetatable(obj,obj)
     obj.__index = taskSequence
