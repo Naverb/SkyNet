@@ -185,8 +185,7 @@ pendingTasksMt = {
     end
 }
 
-setmetatable(taskSequence.pendingTasks, pendingTasksMt) --This allows us to do some sexy syntactical sugar, sweetie (x5 alliteration combo).
-
+setmetatable(taskSequence.pendingTasks, pendingTasksMt)
 setmetatable(taskSequence, taskSequence)
 taskSequence.__index = task -- We tell taskSequence to extend task.
 
