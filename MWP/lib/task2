@@ -28,7 +28,7 @@ yielding_object = {
 setmetatable(yielding_object, yielding_object)
 yielding_object.__index = function (t, k)
     -- We probably want to make this function a little more sophisticated.
-    error('Yielding object' .. t.name .. ' attempted to access nil value at '.. k .. '.')
+    error('Yielding object ' .. t.name .. ' attempted to access nil value at '.. k .. '.')
 end
 
 function yielding_object:registerResumeEvent(resumeEvent, ...)
@@ -57,10 +57,10 @@ task = {
     -- This is the default task_co. It's completely useless, but we have it to avoid a nil reference.,
     action = function ()
         return true
-    end,
-
-    task_co = coroutine.create(action)
+    end
 }
+task.task_co = coroutine.create(task.action)
+
 setmetatable(task, task)
 task.__index = yielding_object -- We tell task to extend yielding_object.
 
@@ -179,7 +179,7 @@ taskSequence = {
 
 tasksMt = {
     __index = function(tasksTable, event)
-        return function(self, event)
+        return function(self)
             self:registerResumeEvent(event)
             self.status = 'cold'
             return coroutine.yield(event)
@@ -191,7 +191,8 @@ setmetatable(taskSequence.tasks, tasksMt) -- This allows us to handle the case w
 
 pendingTasksMt = {
     __index = function(k,t)
-        print('Attempted to execute tasks of event ' .. k .. 'despite ' .. t .. ' not having any such pending tasks.')
+        local name = t.name or 'unknown_task_sequence'
+        print('Attempted to execute tasks of event ' .. k .. 'despite ' .. name .. ' not having any such pending tasks.')
     end
 }
 
@@ -209,14 +210,17 @@ taskSequence.__index = task -- We tell taskSequence to extend task.
 
 function taskSequence:queueTask(task)
     -- Add a task to the taskSequence, to be completed after all other tasks in nextTask have been run.
-    table.insert(_pendingtasks[task.resumeEvent], task) -- Can we insert to a table that doesn't necessarily exist yet?
-    task:registerParent(_pendingtasks.enclosing_task_sequence)
+    if not self.pendingTasks[task.resumeEvent] then
+        self.pendingTasks[task.resumeEvent] = {}
+    end
+    table.insert(self.pendingTasks[task.resumeEvent], task) -- Can we insert to a table that doesn't necessarily exist yet? (Apparently not after testing)
+    task:registerParent(self)
 
 end
 
 function taskSequence:unqueueTask(task)
     table.remove(self.pendingTasks[task.resumeEvent], task.name)
-    task:registerParent(_pendingtasks.enclosing_task_sequence)
+    task:registerParent(self)
 end
 
 function taskSequence:checkEventFulfillment(event)
@@ -239,7 +243,9 @@ function taskSequence:dispatch(arg)
 
         -- If event is not specified we dispatch all tasks.
         if dispatchAll then
-            if not self.allTasks_co or coroutine.status(self.allTasks_co) == 'dead' then
+            if not self.allTasks_co then
+                self:createAllTasksCoroutine()
+            elseif coroutine.status(self.allTasks_co) == 'dead' then
                 self:createAllTasksCoroutine()
             end
 
@@ -286,7 +292,7 @@ function taskSequence:processTask(task)
 
         local nextAction = self.checkEventFulfillment[task.resumeEvent]
 
-        local interceptedPromiseData = nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
+        nextAction(self) -- Either this will queue the task that fulfills resumeEvent, or it yields the taskSequence so that another yielding_object can try to satisfy the resumeEvent.
     end
 end
 

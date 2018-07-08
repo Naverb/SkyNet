@@ -25,5 +25,8 @@ wp = waypoint.waypointTask:new('Home', home)
 tS = task2.taskSequence:new('main_sequence')
 
 tS:queueTask(wp)
+tS:createAllTasksCoroutine()
+while true do
 
-tS:dispatch{dispatchAll = true}
+    tS:dispatch{dispatchAll = true}
+ends

@@ -37,7 +37,7 @@ function getOrientation(localMode)
 
         -- We yield here because non-local getOrientation requires fuel, so yielding allows a taskHandler
         -- to pass execution to a fuel checker listener if we want to.
-        coroutine.yield('sufficient_fuel')
+        --coroutine.yield('sufficient_fuel')
         local err, loc1 = getLocation()
         -- Now we'll move the turtle
 
