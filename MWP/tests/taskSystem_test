@@ -14,12 +14,8 @@ print('##########################')
 
 function printTable(t)
     print('Printing ' .. tostring(t)) 
-    if #t > 0 then 
-        for k,val in pairs(t) do
-            print(k)
-        end
-    else
-        print('Table has no contents')
+    for k,val in pairs(t) do
+        print(k)
     end
 end
 
