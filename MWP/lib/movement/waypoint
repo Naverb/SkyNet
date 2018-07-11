@@ -35,11 +35,14 @@ end
 
 waypointTask = {}
 function waypointTask:new(name, loc)
-    
+
     local wp = waypoint:new(name,loc)
     local obj = task2.task:new(name, nil, wp.go)
-    obj.waypoint = wp
 
+    -- Now merge the properties of wp into obj:
+    for k,v in pairs(wp) do
+        obj[k] = v
+    end
     return obj
 end
 

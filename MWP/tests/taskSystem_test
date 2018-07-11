@@ -12,6 +12,17 @@ print('Loading act library')
 os.loadAPI('SkyNet/MWP/lib/act')
 print('##########################')
 
+function printTable(t)
+    print('Printing ' .. tostring(t)) 
+    if #t > 0 then 
+        for k,val in pairs(t) do
+            print(k)
+        end
+    else
+        print('Table has no contents')
+    end
+end
+
 
 corner1 = vector.new(-114,91,359)
 corner2 = vector.new(-178,91,359)
@@ -24,9 +35,19 @@ wp = waypoint.waypointTask:new('Home', home)
 
 tS = task2.taskSequence:new('main_sequence')
 
+print('==========')
+print(wp.name)
+print(wp.resumeEvent)
+
+
+
 tS:queueTask(wp)
 tS:createAllTasksCoroutine()
+print(tS.allTasks_co)
+print(tS:dispatch{ dispatchAll = true })
+print(wp.resumeEvent)
+--[[
 while true do
 
     tS:dispatch{dispatchAll = true}
-end
+end]]
