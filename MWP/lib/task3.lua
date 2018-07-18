@@ -45,13 +45,13 @@
     This is the interface that contains the methods necessary to yield and send and receive promises.
 
     Attributes:
-        status: String -- The status (yielded, dead, running) of the yielding_object
+        isActive: Bool -- The status of the yielding_object
         parent: taskSequence -- A pointer to the taskSequence that contains this yielding_object.
         name: String
 
     Methods:
         yield(requiredPromises: Promise[]): Promise[] -- Yields the yielding_object, informing the parent that this yielding_object needs requiredPromises[] where requiredPromises is a table of promises necessary to resume.
-        registerParent(parent: taskSequence): void -- sets self.parent.
+        registerParent(parent: taskSequence): void -- Sets self.parent.
 ]]
 
 -- CLASS Task IMPLEMENTS YieldingObject
@@ -59,7 +59,7 @@
     This is the class that implements YieldingObject to run a predetermined function when the tasks conditions are satisfied in addition to receiving a promise that satisfies the task's requiredPromises.
 
     Attributes:
-        status: String
+        isActive: Bool -- Determines whether this task will try to do anything if task:run(...) is called.
         parent: TaskSequence
         name: String
         requiredPromises: Promise[] -- Contains the promises needed by this task in order to resume after yielding.
@@ -67,7 +67,7 @@
         action: Coroutine -- The coroutine that contains this task's procedure to be resumed/executed on self:run(...).
         procedure: Function -- The function that is wrapped by self.action containing the code that is executed when task:run(...) is called.
         condition: Function -- The function that is evaluated to see if this task is clear to run.
-        isActive: Bool -- Determines whether this task will try to do anything if task:run(...) is called.
+
 
     Methods:
         checkCondition(): Bool -- Checks self.condition() to see if this task is clear to run.
@@ -93,5 +93,10 @@
         registeredTasks: Task[] -- The table that tracks all tasks that can fulfill promises asked by tasks in taskSequence.pendingTasks.
         askedPromises: Promise[] -- A table containing the promises that this taskSequence cannot fulfill.
     Methods:
+        yield(requiredPromises: Promise[]): Promise[] -- Yields this taskSequence, informing the parent of what promises this taskSequence needs in order to resume its pendingTasks. When this taskSequence is resumed, an array of promises is sent to this taskSequences promises table (would this always be self.askedPromises?).
+        registerParent(parent: TaskSequence or nil): void -- Sets self.parent.
         checkPromiseFullfillment(promise: Promise): Bool - Checks if any task in registeredTasks can fulfill promise. If so, return true. If not, return false and add promise to self.askedPromises so that self.parent can try to fulfill them.
+        run(promises: Promise[]): Table -- Takes in promises and loads them into a table of promises to be reachable by self.pendingTasks. If the sequence is enabled, it then begins/resumes execution of the action for each task in self.pendingTasks.
+        enable(): void -- sets self.isActive = true.
+        disable(): void -- sets self.isActive = false.
 ]]
