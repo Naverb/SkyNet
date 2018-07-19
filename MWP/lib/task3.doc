@@ -21,7 +21,7 @@
         (if no): sorry, I need to ask someone else. You'll have to wait a bit.
     PTS (to its own enclosingTaskSequence, PPTS): Hi, I need requiredPromise, can you give me that?
     PPTS: Let me check..
-        [ The process repeats until requiredPromise is fullfilled.]
+        [ The process repeats until requiredPromise is fulfilled.]
 ]]
 
 -- CLASS Promise
@@ -30,14 +30,15 @@
     -- "The promise class may not have any methods - it may just be a table"
 
     Attributes:
-        type: String -- A label that describes what kind of tasks can fulfill this promise (see task.registeredOutcome).
+        kind: String -- A label that describes what kind of tasks can fulfill this promise (see task.registeredOutcome).
         dataWasAccessed: Bool -- This boolean is a flag to see if a yielding_object has used this promise before.
+        resolved: Bool -- Has this task been fulfilled by another task?
         data: Table -- Stores the data of the promise
         questionData: Table -- Store the metadata of the context in which a task requested this promise.
         askingTask: Task -- Pointer to the task that asked for this promise.
 
     Methods:
-		new{(askingTask, questionData)}: Promise -- Creates a new promise where {attributes} be {askingTask, questionData, type} makes the most sense, with {attributes} pulling from any of the above properties we choose to define.
+		new{(askingTask, questionData)}: Promise -- Creates a new promise where {attributes} be {askingTask, questionData, kind} makes the most sense, with {attributes} pulling from any of the above properties we choose to define.
 ]]
 
 -- INTERFACE YieldingObject
@@ -60,23 +61,24 @@
 
     Attributes:
         isActive: Bool -- Determines whether this task will try to do anything if task:run(...) is called.
-		taskSequence: TaskSequence
+		enclosingTaskSequence: TaskSequence
         name: String
+        enabled: Bool
         requiredPromises: Promise[] -- Contains the promises needed by this task in order to resume after yielding.
-		registeredOutcome: String -- The type of promise this task can fulfill.
-        action: Coroutine -- The coroutine that contains this task's procedure to be resumed/executed on self:run(...).
+		registeredOutcome: String -- The kind of promise this task can fulfill.
         procedure: Function -- The function that is wrapped by self.action containing the code that is executed when task:run(...) is called.
+        action: Coroutine -- The coroutine that contains this task's procedure to be resumed/executed on self:run(...).
         condition: Function -- The function that is evaluated to see if this task is clear to run.
 
     Methods:
         checkCondition(): Bool -- Checks self.condition() to see if this task is clear to run.
-        run(promises: Promise[]): Table -- Runs a predefined procedure if this task's asked promises are fullfilled and checkCondition returns true. Returns information specific to the task.
+        run(promises: Promise[]): Table -- Runs a predefined procedure if this task's asked promises are fulfilled and checkCondition returns true. Returns information specific to the task.
         yield(requiredPromises: Promise[]): Promise[] -- Yields this task, informing the enclosingTaskSequence of what promises this task has asked. When this task is resumed, an array of promises is returned back to the task's action when task:run(promises) is called.
         registerToTaskSequence(taskSequence: TaskSequence): void
         registerOutcome(newRegisteredOutcome: String): void -- Sets self.registeredOutcome.
-        resurrect(): Bool -- Recreates the action from this task's procedure. Returns whether the resurrection was a success.
-        enable(): void -- sets self.isActive = true.
-		disable(): void -- sets self.isActive = false.
+        resurrect(): Bool -- Recreates the action from this task's procedure, then returns whether the resurrection was a success.
+        enable(): void -- sets self.enabled = true.
+		disable(): void -- sets self.enabled = false.
 		requestPromise{attributes} : Promise -- Wrapper for Promise:new, that keeps track of askingTask.
 
 ]]
@@ -86,17 +88,21 @@
     This is a class to handle the sequencing between a given set of tasks, handling yielding and providing promises
 
     Attributes:
-        status: String
+        isActive: Bool
         enclosingTaskSequence: TaskSequence
         name: String
+        enabled: Bool
         pendingTasks: Task[] -- The table that contains all the tasks this taskSequence will run.
         registeredTasks: Task[] -- The table that tracks all tasks that can fulfill promises asked by tasks in taskSequence.pendingTasks.
         askedPromises: Promise[] -- A table containing the promises that this taskSequence cannot fulfill.
     Methods:
         yield(requiredPromises: Promise[]): Promise[] -- Yields this taskSequence, informing the enclosingTaskSequence of what promises this taskSequence needs in order to resume its pendingTasks. When this taskSequence is resumed, an array of promises is sent to this taskSequences promises table (would this always be self.askedPromises?).
         registerToTaskSequence(taskSequence: TaskSequence or nil): void -- Sets self.enclosingTaskSequence.
-        checkPromiseFullfillment(promise: Promise): Bool - Checks if any task in registeredTasks can fulfill promise. If so, return true. If not, return false and add promise to self.askedPromises so that self.enclosingTaskSequence can try to fulfill them.
+        checkPromiseFulfillment(promise: Promise): Bool - Checks if any task in registeredTasks can fulfill promise. If so, return true. If not, return false and add promise to self.askedPromises so that self.enclosingTaskSequence can try to fulfill them.
         run(promises: Promise[]): Table -- Takes in promises and loads them into a table of promises to be reachable by self.pendingTasks. If the sequence is enabled, it then begins/resumes execution of the action for each task in self.pendingTasks.
-        enable(): void -- sets self.isActive = true.
-        disable(): void -- sets self.isActive = false.
+        getNextTask(): Task -- Returns the next task in pendingTasks to be run.
+        queueTask(task: Task): void -- Add a task to pendingTasks.
+        unqueueTask(task: Task): void -- Remove a task from pendingTasks.
+        enable(): void -- sets self.enabled = true.
+        disable(): void -- sets self.enabled = false.
 ]]
