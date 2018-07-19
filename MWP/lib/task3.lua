@@ -32,12 +32,13 @@
     Attributes:
         type: String -- A label that describes what kind of tasks can fulfill this promise (see task.registeredOutcome).
         dataWasAccessed: Bool -- This boolean is a flag to see if a yielding_object has used this promise before.
-        data: Table -- Stores the metadata of the promise
+        data: Table -- Stores the data of the promise
         questionData: Table -- Store the metadata of the context in which a task requested this promise.
         askingTask: Task -- Pointer to the task that asked for this promise.
 
     Methods:
-        new(askingTask, questionData): Promise -- Creates a new promise.
+		new(askingTask, questionData): Promise -- Creates a new promise.
+			// I feel like requestPromise::({attributes}) makes the most sense, with {attributes} pulling from any of the above properties we choose to define. Also easily supports scalability to more promise attributes if we find ourselves adding/removing them or even changing the paradigm
 ]]
 
 -- INTERFACE YieldingObject
@@ -46,12 +47,14 @@
 
     Attributes:
         isActive: Bool -- The status of the yielding_object
-        parent: taskSequence -- A pointer to the taskSequence that contains this yielding_object.
+		parent: taskSequence -- A pointer to the taskSequence that contains this yielding_object.
+			// See my lengthy comment below
         name: String
 
     Methods:
         yield(requiredPromises: Promise[]): Promise[] -- Yields the yielding_object, informing the parent that this yielding_object needs requiredPromises[] where requiredPromises is a table of promises necessary to resume.
-        registerParent(parent: taskSequence): void -- Sets self.parent.
+		registerParent(parent: taskSequence): void -- Sets self.parent.
+			// If we are somewhat differentiating tasks and taskSequences by making them extensions of an interface rather than both essentially tasks, I feel like "parent" might not be the right term - I would suggest something akin to registerToTaskSequence(_)
 ]]
 
 -- CLASS Task IMPLEMENTS YieldingObject
@@ -60,10 +63,12 @@
 
     Attributes:
         isActive: Bool -- Determines whether this task will try to do anything if task:run(...) is called.
-        parent: TaskSequence
+		parent: TaskSequence
+			// See my comment above
         name: String
         requiredPromises: Promise[] -- Contains the promises needed by this task in order to resume after yielding.
-        registeredOutcome: String -- The type of promise this task can fulfill.
+		registeredOutcome: String -- The type of promise this task can fulfill.
+			// Perhaps we should make this registeredOutcomes[], in case we can satisfy multiple outcomes? It also occurs to me right now that we might want to consider whether we want to seperate two tasks that do very related jobs with a slight difference, or both make them extensions of a base task - i.e. we have a base registeredOutcome for getFuel and can extend it with tasks that have extra functionality. Or we could make these metafunctions for the base getFuel task. It really depends on the programming paradigm we wanna go for here, but we should deside from the start.
         action: Coroutine -- The coroutine that contains this task's procedure to be resumed/executed on self:run(...).
         procedure: Function -- The function that is wrapped by self.action containing the code that is executed when task:run(...) is called.
         condition: Function -- The function that is evaluated to see if this task is clear to run.
