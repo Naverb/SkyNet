@@ -37,8 +37,8 @@
         askingTask: Task -- Pointer to the task that asked for this promise.
 
     Methods:
-		new(askingTask, questionData): Promise -- Creates a new promise.
-			// I feel like requestPromise::({attributes}) makes the most sense, with {attributes} pulling from any of the above properties we choose to define. Also easily supports scalability to more promise attributes if we find ourselves adding/removing them or even changing the paradigm
+		new{(askingTask, questionData)}: Promise -- Creates a new promise.
+			// I recommend {attributes} be {askingTask, questionData, type} makes the most sense, with {attributes} pulling from any of the above properties we choose to define.
 ]]
 
 -- INTERFACE YieldingObject
@@ -73,7 +73,6 @@
         procedure: Function -- The function that is wrapped by self.action containing the code that is executed when task:run(...) is called.
         condition: Function -- The function that is evaluated to see if this task is clear to run.
 
-
     Methods:
         checkCondition(): Bool -- Checks self.condition() to see if this task is clear to run.
         run(promises: Promise[]): Table -- Runs a predefined procedure if this task's asked promises are fullfilled and checkCondition returns true. Returns information specific to the task.
@@ -82,7 +81,9 @@
         registerOutcome(newRegisteredOutcome: String): void -- Sets self.registeredOutcome.
         resurrect(): Bool -- Recreates the action from this task's procedure. Returns whether the resurrection was a success.
         enable(): void -- sets self.isActive = true.
-        disable(): void -- sets self.isActive = false.
+		disable(): void -- sets self.isActive = false.
+		requestPromise{attributes} : Promise
+			// Wrapper for Promise:new, that keeps track of askingTask
 
 ]]
 
