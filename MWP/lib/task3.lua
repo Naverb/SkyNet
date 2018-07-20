@@ -135,9 +135,13 @@ TaskSequence.ranTasks               = EMPTY_TABLE
 TaskSequence.askedPromises          = EMPTY_TABLE
 TaskSequence.name                   = EMPTY_PROPERTY
 
+function TaskSequence:passUpPromises()
+	self.enclosingTaskSequence.requiredPromises = self.askedPromises
+		-- If task sequence is unable to fulfill, pass up to enclosingTaskSequence. Seperated from yield in case we want to have multiple task sequences alternating, and we want to be able to yield system control between Task Sequences without passing data up to enclosingTaskSequences at the same time.
+end
 
 function TaskSequence:yield()
-
+	-- See my comment above. Not sure what we want to entail yielding, so I'll leave this one open for discussion.
 end
 
 function TaskSequence:checkPromiseFulfillment(promise)
@@ -188,8 +192,9 @@ end
 
 function TaskSequence:getNextTask()
     if #self.tasksToRun <= 0 then
-        self.tasksToRun = self.pendingTasks
-        -- YIELD HERE TO NOTIFY PARENT OF self.askedPromises
+		self.tasksToRun = self.pendingTasks
+		self.passUpPromises()
+			-- YIELD HERE TO NOTIFY PARENT OF self.askedPromises
     end
 
     local nextTask = tasksToRun[1]

@@ -1,0 +1,16 @@
+
+Waypoint = class.Class{
+	constructor = function(self, params)
+		local obj = {}
+			name = params.name or "untitled waypoint"
+			location = assert(params.location, "Attempted to create a waypoint without specifying a location")
+		return obj
+	end
+}
+
+function Waypoint:updateLocation(newLoc)
+	self.location = assert(newLoc, "Attempted to update location of waypoint without specifying a location")
+end
+
+
+-- I am not convinced we should put the "go" function in here - it feels this belongs to some form of movement library. The waypoint library seems like it ought to merely handle the creation and handling of waypoints
