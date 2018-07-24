@@ -43,7 +43,7 @@ YieldingObject = {
     end
 }
 
--- @CLASS Task @PARAMS {name,procedure [,registeredOutcome, condtion]}
+-- @CLASS Task @PARAMS {name,procedure [,registeredOutcome, condition]}
 Task = class.Class{
     extends = YieldingObject,
     constructor = function(self, params)
