@@ -135,12 +135,6 @@ TaskSequence.ranTasks               = EMPTY_TABLE
 TaskSequence.askedPromises          = EMPTY_TABLE
 TaskSequence.name                   = EMPTY_PROPERTY
 
-function TaskSequence:passUpPromises()
-	self.enclosingTaskSequence.requiredPromises = self.askedPromises
-	-- I am 99.99% sure this should be self.requiredPromises = self.askedPromises, otherwise we overwrite requestedPromises of other children in the enclosingTaskSequence. Moreover, we may not need a passUpPromises method for the same reasons that we may not need a yield method (see below).
-		-- If task sequence is unable to fulfill, pass up to enclosingTaskSequence. Seperated from yield in case we want to have multiple task sequences alternating, and we want to be able to yield system control between Task Sequences without passing data up to enclosingTaskSequences at the same time.
-end
-
 function TaskSequence:yield()
 	-- See my comment above. Not sure what we want to entail yielding, so I'll leave this one open for discussion.
 	-- We may not need to define a TaskSequence:yield function, for TaskSequence:run() returns control to the enclosing TaskSequence when it returns after running all tasks in taskSequence.tasksToRun.
@@ -154,26 +148,26 @@ function TaskSequence:run()
 
     if self.enabled then
 	repeat
-		local noTasksLeft, nextTask = self:getNextTask()
-		if not nextTask then
+		local noYieldingObjectsLeft, nextYieldingObject = self:getNextYieldingObject()
+		if not nextYieldingObject then
 			print('No tasks to run in ' .. self.name)
 			return true -- This boolean will be passed to "ok" in the enclosingTaskSequence. Do we want that? Perhaps we should return two values: one for "ok" and another to deterined whether this taskSequence was enabled or disabled.
 		else
-			local ok, returnedData = nextTask:run()
-			for i, promise in ipairs(nextTask.requiredPromises) do
+			local ok, returnedData = nextYieldingObject:run()
+			for i, promise in ipairs(nextYieldingObject.requiredPromises) do
 			    if self:checkPromiseFulfillment(promise) then
-				self:queueTask(self.registeredTasks[promise.kind])
+				    self:queueTask(self.registeredTasks[promise.kind])
 			    else
-				table.insert(self.askedPromises, promise) -- We probably want to change all references to askedPromises to requiredPromises. In doing so, we make taskSequences fully compatible with the YieldingObject's interface, and we can simplify the implementation of nested taskSequences within control flow.
+				    table.insert(self.requiredPromises, promise)
 			    end
 			end
 
 			if not ok then
 			    print(returnedData[1]) -- If the task terminated with an error, this is the error message.
-			    nextTask:disable()
+			    nextYieldingObject:disable()
 			end
 		end
-	until noTasksLeft
+	until noYieldingObjectsLeft
         return true
     else
         return false
@@ -198,16 +192,16 @@ function TaskSequence:unqueueTask(task)
     task.index = nil
 end
 
-function TaskSequence:getNextTask()
+function TaskSequence:getNextYieldingObject()
     if #self.tasksToRun <= 0 then
 	self.tasksToRun = self.pendingTasks
-	return true, nil -- We don't have a new task to run until the enclosingTaskSequence queues this again.
+	return true, nil -- We don't have a new yielding object to run until the enclosingTaskSequence queues this again.
 
     else
-	local nextTask = self.tasksToRun[1]
+	local nextYieldingObject = self.tasksToRun[1]
 	table.remove(self.tasksToRun, 1)
-	return false, nextTask
+	return false, nextYieldingObject
     end
 
-    return true, nil 
+    return true, nil
 end
