@@ -2,8 +2,6 @@
 function Class(attributes)
     local new_class = {}
 
-    local className = assert(attributes.name, 'MUST PROVIDE NAME OF CLASS!')
-
     if attributes.metatable then
         local inst_mt = attributes.metatable
         inst_mt.__index = new_class
@@ -39,6 +37,8 @@ end
 -- @FUNCTION CCLASS @PARAMS {metatable, constructor, extends [, ...]}
 function CClass(attributes)
     local new_class = {}
+
+    local className = assert(attributes.name, 'MUST PROVIDE NAME OF CLASS!')
 
     if attributes.metatable then
         local inst_mt = attributes.metatable
