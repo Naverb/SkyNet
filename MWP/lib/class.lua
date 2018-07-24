@@ -33,6 +33,51 @@ function Class(attributes)
     end
     return new_class
 end
+
+-- @FUNCTION CCLASS @PARAMS {metatable, constructor, extends [, ...]}
+function CClass(attributes)
+    local new_class = {}
+
+    if attributes.metatable then
+        local inst_mt = attributes.metatable
+        inst_mt.__index = new_class
+    else
+        local inst_mt = { __index = new_class }
+    end
+
+
+    new_class.new = function(...)
+        local newinst
+        if attributes.constructor then
+            newinst = attributes.constructor(...)
+        else
+            newinst = {}
+        end
+        setmetatable( newinst, inst_mt)
+        return newinst
+    end
+
+
+    if attributes.extends then
+        if attributes.metatable then
+            class_mt = attributes.metatable
+            class_mt.__index = attributes.extends
+        else
+            class_mt = { __index = attributes.extends}
+        end
+        setmetatable( new_class, class_mt)
+    end
+
+    for key, attribute in pairs(attributes) do
+	    if type(attribute) == 'function' and key ~= 'constructor' then
+		    new_class[key] = attribute -- For any methods defined in the parameters of Class, add then to our class that we are creating.
+	    end
+    end
+
+    return new_class
+end
+
+
 ----------------------------------------------
 -- Helper function to implement inheritance --
 ----------------------------------------------
