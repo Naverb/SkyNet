@@ -69,11 +69,18 @@ function CClass(attributes)
     end
 
     for key, attribute in pairs(attributes) do
-	    if type(attribute) == 'function' and key ~= 'constructor' then
+	    if key ~= 'constructor' then
 		    new_class[key] = attribute -- For any methods defined in the parameters of Class, add then to our class that we are creating.
 	    end
     end
 
+    if attributes.implements then
+        for key, attribute in pairs(attributes.implements) do
+            if new_class[key] == nil or type(attribute) ~= type(new_class[key]) then
+                error('Class failed to implement ' .. key .. '.')
+            end
+        end
+    end
     return new_class
 end
 
