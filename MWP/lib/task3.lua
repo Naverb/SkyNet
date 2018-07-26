@@ -26,26 +26,9 @@ Promise.askingTask          = EMPTY_PROPERTY
 Promise.kind                = EMPTY_PROPERTY
 
 
--- @PRIMITIVE YieldingObject
-YieldingObject = {
-    isActive                = EMPTY_BOOL,
-    enclosingTaskSequence   = EMPTY_TABLE,
-    requiredPromises        = EMPTY_TABLE,
-    name                    = EMPTY_PROPERTY,
-
-    yield = function(self, requiredPromises)
-        self.isActive = false
-        self.requiredPromises = requiredPromises
-        return coroutine.yield()
-    end,
-    registerToTaskSequence = function(self, taskSequence)
-        self.enclosingTaskSequence = taskSequence
-    end
-}
 
 -- @CLASS Task @PARAMS {name,procedure [,registeredOutcome, condition]}
 Task = class.Class{
-    extends = YieldingObject,
     constructor = function(self, params)
 
         local obj = {}
@@ -69,6 +52,10 @@ Task.registeredOutcome       = EMPTY_PROPERTY
 Task.procedure               = EMPTY_PROPERTY
 Task.action                  = EMPTY_PROPERTY
 Task.condition               = function() return true end
+
+function Task:registerToTaskSequence(taskSequence)
+	self.enclosingTaskSequence = taskSequence
+end
 
 function Task:checkCondition()
     if self.enabled then
@@ -132,12 +119,11 @@ TaskSequence.enclosingTaskSequence  = EMPTY_TABLE
 TaskSequence.pendingTasks           = EMPTY_TABLE
 TaskSequence.registeredTasks        = EMPTY_TABLE
 TaskSequence.ranTasks               = EMPTY_TABLE
-TaskSequence.askedPromises          = EMPTY_TABLE
+TaskSequence.requiredPromises       = EMPTY_TABLE
 TaskSequence.name                   = EMPTY_PROPERTY
 
-function TaskSequence:yield()
-	-- See my comment above. Not sure what we want to entail yielding, so I'll leave this one open for discussion.
-	-- We may not need to define a TaskSequence:yield function, for TaskSequence:run() returns control to the enclosing TaskSequence when it returns after running all tasks in taskSequence.tasksToRun.
+function Task:registerToTaskSequence(taskSequence)
+	self.enclosingTaskSequence = taskSequence
 end
 
 function TaskSequence:checkPromiseFulfillment(promise)

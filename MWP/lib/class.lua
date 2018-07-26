@@ -79,12 +79,14 @@ function CClass(attributes)
     if attributes.implements then
         for key, attribute in pairs(attributes.implements) do
             if new_class[key] == nil or type(attribute) ~= type(new_class[key]) then
-                error('Class failed to implement ' .. key .. '.', 2)
+                error('Class failed to implement ' .. key .. '.')
             end
         end
     end
 
-    return new_class
+    FILE_ENV = getfenv(1) -- 1 is the current sandbox in computercraft lua
+    FILE_ENV[className] = new_class
+    _G[className] = nil -- When os.loadAPI runs the file containing new_class, it will create an entry into file[new_class], then delete the duplicate entry in _G[new_class]. This is very hacky, but computercraft lua doesn't give a debug library...
 end
 
 
