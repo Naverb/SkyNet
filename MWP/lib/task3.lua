@@ -65,6 +65,12 @@ function Task:checkCondition()
     end
 end
 
+function Task:yield(requiredPromises)
+    self.isActive = false
+    self.requiredPromises = requiredPromises
+    return coroutine.yield()
+end
+
 function Task:run()
     if self:checkCondition() then
         self.isActive = true
@@ -122,7 +128,12 @@ TaskSequence.ranTasks               = EMPTY_TABLE
 TaskSequence.requiredPromises       = EMPTY_TABLE
 TaskSequence.name                   = EMPTY_PROPERTY
 
-function Task:registerToTaskSequence(taskSequence)
+function TaskSequence:yield(status)
+    self.isActive = false
+    return status
+end
+
+function TaskSequence:registerToTaskSequence(taskSequence)
 	self.enclosingTaskSequence = taskSequence
 end
 
@@ -133,31 +144,32 @@ end
 function TaskSequence:run()
 
     if self.enabled then
-	repeat
-		local noYieldingObjectsLeft, nextYieldingObject = self:getNextYieldingObject()
-		if not nextYieldingObject then
-			print('No tasks to run in ' .. self.name)
-			return true -- This boolean will be passed to "ok" in the enclosingTaskSequence. Do we want that? Perhaps we should return two values: one for "ok" and another to deterined whether this taskSequence was enabled or disabled.
-		else
-			local ok, returnedData = nextYieldingObject:run()
-			for i, promise in ipairs(nextYieldingObject.requiredPromises) do
-			    if self:checkPromiseFulfillment(promise) then
-				    self:queueTask(self.registeredTasks[promise.kind])
-			    else
-				    table.insert(self.requiredPromises, promise)
-			    end
-			end
+        self.isActive = true
+        repeat
+            local noYieldingObjectsLeft, nextYieldingObject = self:getNextYieldingObject()
+            if not nextYieldingObject then
+                print('No tasks to run in ' .. self.name)
+                self:yield(true) -- This boolean will be passed to "ok" in the enclosingTaskSequence. Do we want that? Perhaps we should return two values: one for "ok" and another to deterined whether this taskSequence was enabled or disabled.
+            else
+                local ok, returnedData = nextYieldingObject:run()
+                for i, promise in ipairs(nextYieldingObject.requiredPromises) do
+                    if self:checkPromiseFulfillment(promise) then
+                        self:queueTask(self.registeredTasks[promise.kind])
+                    else
+                        table.insert(self.requiredPromises, promise)
+                    end
+                end
 
-			if not ok then
-			    print(returnedData[1]) -- If the task terminated with an error, this is the error message.
-			    nextYieldingObject:disable()
-			end
-		end
-	until noYieldingObjectsLeft
-        return true
-    else
-        return false
-    end
+                if not ok then
+                    print(returnedData[1]) -- If the task terminated with an error, this is the error message.
+                    nextYieldingObject:disable()
+                end
+            end
+        until noYieldingObjectsLeft
+            self:yield(true)
+        else
+            self:yield(false)
+        end
 end
 
 function TaskSequence:enable()
@@ -180,13 +192,13 @@ end
 
 function TaskSequence:getNextYieldingObject()
     if #self.tasksToRun <= 0 then
-	self.tasksToRun = self.pendingTasks
-	return true, nil -- We don't have a new yielding object to run until the enclosingTaskSequence queues this again.
+        self.tasksToRun = self.pendingTasks
+        return true, nil -- We don't have a new yielding object to run until the enclosingTaskSequence queues this again.
 
-    else
-	local nextYieldingObject = self.tasksToRun[1]
-	table.remove(self.tasksToRun, 1)
-	return false, nextYieldingObject
+        else
+        local nextYieldingObject = self.tasksToRun[1]
+        table.remove(self.tasksToRun, 1)
+        return false, nextYieldingObject
     end
 
     return true, nil
