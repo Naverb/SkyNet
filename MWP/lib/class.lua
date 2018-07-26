@@ -38,6 +38,8 @@ end
 function CClass(attributes)
     local new_class = {}
 
+    local className = assert(attributes.name, 'MUST PROVIDE NAME OF CLASS!')
+
     if attributes.metatable then
         local inst_mt = attributes.metatable
         inst_mt.__index = new_class
@@ -81,7 +83,10 @@ function CClass(attributes)
             end
         end
     end
-    return new_class
+
+    FILE_ENV = getfenv(1) -- 1 is the current sandbox in computercraft lua
+    FILE_ENV[className] = new_class
+    _G[className] = nil -- When os.loadAPI runs the file containing new_class, it will create an entry into file[new_class], then delete the duplicate entry in _G[new_class]. This is very hacky, but computercraft lua doesn't give a debug library...
 end
 
 
