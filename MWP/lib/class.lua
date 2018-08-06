@@ -71,9 +71,7 @@ function CClass(attributes)
     end
 
     for key, attribute in pairs(attributes) do
-	    if key ~= 'constructor' then
-		    new_class[key] = attribute -- For any methods defined in the parameters of Class, add then to our class that we are creating.
-	    end
+		new_class[key] = attribute -- For any methods defined in the parameters of Class, add then to our class that we are creating.
     end
 
     if attributes.implements then
@@ -84,9 +82,7 @@ function CClass(attributes)
         end
     end
 
-    FILE_ENV = getfenv(1) -- 1 is the current sandbox in computercraft lua
-    FILE_ENV[className] = new_class
-    _G[className] = nil -- When os.loadAPI runs the file containing new_class, it will create an entry into file[new_class], then delete the duplicate entry in _G[new_class]. This is very hacky, but computercraft lua doesn't give a debug library...
+    return new_class
 end
 
 
