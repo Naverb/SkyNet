@@ -37,16 +37,51 @@ end
 -- @FUNCTION CCLASS @PARAMS {metatable, constructor, extends [, ...]}
 function CClass(attributes)
     local new_class = {}
+    local inst_mt
 
-    local className = assert(attributes.name, 'MUST PROVIDE NAME OF CLASS!')
+    local function tableClone(tab)
+        newTab = {}
 
-    if attributes.metatable then
-        local inst_mt = attributes.metatable
-        inst_mt.__index = new_class
-    else
-        local inst_mt = { __index = new_class }
+        if type(tab) == 'table' then
+            for k,v in pairs(tab) do
+                newTab[k] = v
+            end
+        else
+            print('Attempted to clone empty table!')
+        end
+        return newTab
     end
 
+    for key, attribute in pairs(attributes) do
+		new_class[key] = attribute -- For any methods defined in the parameters of Class, add them to our class that we are creating.
+    end
+
+    if attributes.implements then
+        for key, attribute in pairs(attributes.implements) do
+            if new_class[key] == nil or type(attribute) ~= type(new_class[key]) then
+                error('Class failed to implement ' .. key .. '.',2) -- Raise it up an env to the caller.
+            end
+        end
+    end
+
+    if attributes.extends then
+        if attributes.metatable then
+            class_mt = tableClone(attributes.metatable)
+            class_mt.__index = attributes.extends
+        else
+            class_mt = { __index = attributes.extends}
+        end
+        setmetatable( new_class, class_mt)
+    end
+
+    if attributes.metatable then
+        print('Found metatable, cloning...')
+        inst_mt = tableClone(attributes.metatable)
+        inst_mt.__index = new_class
+    else
+        print('No metatable found...')
+        inst_mt = { __index = new_class }
+    end
 
     new_class.new = function(...)
         local newinst
@@ -55,31 +90,9 @@ function CClass(attributes)
         else
             newinst = {}
         end
+
         setmetatable( newinst, inst_mt)
         return newinst
-    end
-
-
-    if attributes.extends then
-        if attributes.metatable then
-            class_mt = attributes.metatable
-            class_mt.__index = attributes.extends
-        else
-            class_mt = { __index = attributes.extends}
-        end
-        setmetatable( new_class, class_mt)
-    end
-
-    for key, attribute in pairs(attributes) do
-		new_class[key] = attribute -- For any methods defined in the parameters of Class, add then to our class that we are creating.
-    end
-
-    if attributes.implements then
-        for key, attribute in pairs(attributes.implements) do
-            if new_class[key] == nil or type(attribute) ~= type(new_class[key]) then
-                error('Class failed to implement ' .. key .. '.')
-            end
-        end
     end
 
     return new_class
@@ -115,3 +128,5 @@ function extends( baseClass, constructor )
 
     return new_class
 end
+
+return CClass
