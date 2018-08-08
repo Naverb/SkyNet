@@ -1,4 +1,8 @@
-local Class = loadfile('/MWP/lib/class.lua')()
+module = loadfile('/MWP/lib/module.lua')()
+require = module.require
+classapi = require('/MWP/lib/class.lua')
+woah = require('/MWP/lib/class.lua')
+local Class = classapi.Class
 
 kiwiInterface = {
     mango = function() end
@@ -24,7 +28,7 @@ potato = Class {
     end,
 
     metatable = potatoMt,
-    implements = kiwiInterface,
+    implements = {kiwiInterface},
     extends = kiwiExtends,
 
     cheezburger = 'yee',

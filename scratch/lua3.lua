@@ -1,3 +1,18 @@
+oldCoroutine.yield = coroutine.yield
+
+coroutine.yield = function(event, ...)
+    os_event_promise = Promise:new {
+        askingTask = [SELF],
+        questionData = {...},
+        kind = event
+    }
+    requiredPromises = {os_event_promise}
+
+    return [SELF]:yield(requiredPromises)
+end
+
+
+
 function yielding_object:yield(...)
     promises = table.pack(...)
     coroutine.yield(promises)
@@ -6,8 +21,8 @@ end
 tS {
 
     tS.promises = {
-        'fuel': data,
-        'storage': data,...
+        fuel = data,
+        storage = data
     }
 
 task.goToWaypoint {

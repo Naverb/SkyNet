@@ -33,7 +33,7 @@
         kind: String -- A label that describes what kind of tasks can fulfill this promise (see task.registeredOutcome).
         dataWasAccessed: Bool -- This boolean is a flag to see if a yielding_object has used this promise before.
         resolved: Bool -- Has this task been fulfilled by another task?
-        data: Table -- Stores the data of the promise
+        answerData: Table -- Stores the data of the answer
         questionData: Table -- Store the metadata of the context in which a task requested this promise.
         askingTask: Task -- Pointer to the task that asked for this promise.
 
