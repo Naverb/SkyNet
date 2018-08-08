@@ -1,4 +1,6 @@
-Class = loadfile('./class.lua')()
+local module = loadfile('/MWP/lib/module.lua')()
+local Class = module.require('/MWP/lib/class.lua').Class
+
 -- SOME HELPER STUFF --
 EMPTY_PROPERTY 	= '__empty__'
 EMPTY_BOOL 		= false

@@ -62,5 +62,4 @@ function Class(attributes)
     return new_class
 end
 
-print('Loading Class API')
 return Class -- For loadfile
