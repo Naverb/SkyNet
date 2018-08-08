@@ -1,8 +1,8 @@
 module = loadfile('/MWP/lib/module.lua')()
 require = module.require
-classapi = require('/MWP/lib/class.lua')
+
 woah = require('/MWP/lib/class.lua')
-local Class = classapi.Class
+local Class = woah.Class
 
 kiwiInterface = {
     mango = function() end
