@@ -55,6 +55,11 @@ Task = Class {
         obj.condition = params.condition or nil
         obj.action = coroutine.create(obj.procedure)
 
+        obj.env_mt = { __index = _G }
+        obj.procedure_env = { thisTask = obj }
+        setmetatable(obj.procedure_env, obj.env_mt)
+        setfenv(obj.procedure, obj.procedure_env) -- This creates a global variable within the scope of the procedure - thisTask -  that references the current task (self)
+
         return obj
     end,
 
@@ -87,19 +92,29 @@ Task = Class {
         return coroutine.yield()
     end,
 
+    terminate = function(self, finalData)
+        self.isActive = false
+        self:disable()
+        return finalData
+    end,
+
     run = function(self)
         if self:checkCondition() then
             self.isActive = true
 
-            if not self.requiredPromises then
+            if not self.requiredPromises['os_pullEvent'] then
+                -- This code is run if the task last yielded by calling self:yield()
                 returnedData = {coroutine.resume(self.action, self)}
             else
+                -- This code is run if the task last yielded by calling coroutine.yield.
                 os_event_promise = self.requiredPromises['os_pullEvent'] -- The os_event_promise handles situations where the task calls coroutine.yield() without calling self:yield(). I.e. when rednet yields or gps... etc...
                 if os_event_promise.resolved then
-                    returnedData = {coroutine.resume(self.action, os_event_promise.answerData, self)} -- How the crap will we access self now? FIX THIS ASAP
+                    returnedData = {coroutine.resume(self.action, os_event_promise.answerData)}
+                    self.requiredPromises['os_pullEvent'] = nil
                 else
+                    -- Our os_pullEvent promise wasn't fullfilled
                     self.isActive = false
-                    returnedData = {ok, nil}
+                    returnedData = {true, nil}
                 end
             end
 
@@ -112,14 +127,14 @@ Task = Class {
                 -- task called coroutine.yield(), and we wrap the event of the
                 -- coroutine into a promise to interface with the task API.
                 local os_event = returnedData[1]
-                self.requiredPromises['os_pullEvent'] = self:requestPromise {
+                table.insert(self.requiredPromises, self:requestPromise {
                     questionData = returnedData,
                     kind = os_event
-                }
-
-            else
-                self.requiredPromises['os_pullEvent'] = nil
+                })
+                self.isActive = false
             end
+
+            self:cleanupRequiredPromises()
 
             return ok, returnedData
         else
@@ -139,6 +154,19 @@ Task = Class {
             kind = assert(attributes.kind, self.name .. " attempted to requestPromise without specifying kind")
         }
         return promise
+    end,
+
+    cleanupRequiredPromises = function(self)
+        local promisesToDelete = {}
+        for i,v in pairs(self.requiredPromises) do
+            if v.dataWasAccessed then
+                table.insert(promisesToDelete, i)
+            end
+        end
+
+        for i,v in pairs(promisesToDelete) do
+            self.requiredPromises[i] = nil
+        end
     end,
 
     disable = function(self)
