@@ -1,22 +1,19 @@
 local module = loadfile('/MWP/lib/module.lua')()
 module.clear_module_cache()
-local tsk = module.require('/MWP/lib/task3.lua')
+local tasklib = module.require('/MWP/lib/task3.lua')
 
-testTask = nil
-print(testTask)
-
-local testTask = tsk.Task:new {
+local testTask = tasklib.Task:new {
     name = 'Test',
     procedure = function()
         print('Entered testTask...')
         print(thisTask.name)
 
-        promise = thisTask:requestPromise({
+        promise = thisTask:requestPromise {
             questionData = {
-                wow = 'Owen Wilson'
+                key = 'value'
             },
-            kind = 'Woah'
-        })
+            kind = 'placeholder_promise_type'
+        }
 
         print(promise.kind)
         print('Yielding...')
@@ -27,7 +24,7 @@ local testTask = tsk.Task:new {
         answer = promise.answerData
         promise.dataWasAccessed = true
         print(textutils.serialise(answer))
-        response = coroutine.yield('Oh man', 'gee wiz')
+        response = coroutine.yield('Arg1', 'Arg2')
         print('Got to the end')
         return thisTask:terminate("We're done buddy.")
     end
@@ -54,9 +51,9 @@ end
 print('2')
 for k,v in pairs(testTask.requiredPromises) do
     print(textutils.serialise(v.questionData))
-    if v.kind == 'Woah' then
+    if v.kind == 'placeholder_promise_type' then
         v.answerData = {
-            whoami = 'Carmen Sandiego'
+            key = 'value'
         }
         v.resolved = true
     end
@@ -80,16 +77,6 @@ for k,v in pairs(results) do
     end
 end
 print('3')
-for k,v in pairs(testTask.requiredPromises) do
-    print(textutils.serialise(v.questionData))
-    if v.kind == 'Woah' then
-        v.answerData = {
-            whoami = 'Carmen Sandiego'
-        }
-        v.resolved = true
-    end
-end
-print('4')
 ok, results = testTask:run()
 if ok then
     print('OK')
