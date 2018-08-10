@@ -27,12 +27,12 @@ function require(file)
             module.__path = file
         end
 
-        module_func = loadfile(file, module_env)
+        local module_func, err_loadfile = loadfile(file, module_env)
 
-        local ok, err = pcall( module_func )
+        local ok, err_pcall = pcall( module_func )
 
         if not ok then
-            error('Error in pcall, module_func')
+            error('Error in pcall, module_func: \n -->' .. tostring(err_loadfile) .. '\n -->' .. tostring(err_pcall))
         else
             for k,v in pairs(module_env) do
                 if k ~= '_ENV' then

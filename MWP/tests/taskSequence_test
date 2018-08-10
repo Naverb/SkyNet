@@ -1,0 +1,120 @@
+local module = loadfile('/MWP/lib/module.lua')()
+module.clear_module_cache()
+local tasklib = module.require('/MWP/lib/task3.lua')
+oldPrint = print
+
+
+
+_G['print'] = function(string)
+    local log = fs.open('logfile', 'a')
+    log.writeLine(string)
+    log.close()
+    oldPrint(string)
+end
+
+local testTask1 = tasklib.Task:new {
+    name = 'Test1',
+    procedure = function()
+        print('Entered task1 ...')
+        print(thisTask.name)
+
+        promise = thisTask:requestPromise {
+            questionData = {
+                exampleDatum = 'potato'
+            },
+            kind = 'example_promise'
+        }
+
+        repeat
+            thisTask:yield({promise})
+        until promise.resolved
+        print('Promise is resolved!')
+        answer = promise.answerData
+        promise.dataWasAccessed = true
+        print(answer.exampleAnswer)
+
+        promise2 = thisTask:requestPromise {
+            questionData = {
+                exampleDatum = 'kiwi'
+            },
+            kind = 'example_promise'
+        }
+
+        repeat
+            thisTask:yield({promise2})
+        until promise2.resolved
+        print('Promise2 is resolved!')
+        answer = promise2.answerData
+        promise.dataWasAccessed = true
+        print(answer.exampleAnswer)
+
+        response = gps.locate()
+        print('Just resumed from yield. Received: ' .. response)
+        return thisTask:terminate("We're done buddy.")
+    end
+}
+
+local testTask2 = tasklib.Task:new {
+    name = 'Test2',
+    registeredOutcome = 'example_promise',
+    procedure = function()
+        while true do
+            print('Entered task2 ...')
+            promisesToResolve = thisTask:findPromisesToResolve()
+
+            for _,promise in pairs(promisesToResolve) do
+                print('Found a promise of type ' .. promise.kind)
+                if promise.kind == 'example_promise' then
+                    promise.answerData = {
+                        exampleAnswer = 'Answered ' .. promise.questionData.exampleDatum
+                    }
+                    promise.resolved = true
+                end
+            end
+
+            print('Resolved the promises')
+            thisTask.enclosingTaskSequence:unqueueTask(thisTask)
+            thisTask:yield()
+        end
+    end
+}
+
+local test_os_task = tasklib.OSEventHandler:new()
+
+local testTaskSequence = tasklib.TaskSequence:new {
+    name = 'TestTaskSequence'
+}
+
+local otherTaskSequence = tasklib.TaskSequence:new {
+    name = 'OtherTaskSequence'
+}
+
+testTask2:registerToTaskSequence(testTaskSequence)
+testTaskSequence:registerToRegisteredTasks(testTask2)
+otherTaskSequence:registerToRegisteredTasks(test_os_task)
+
+testTaskSequence:queueTask(testTask1)
+print('Running ' .. otherTaskSequence.name)
+
+otherTaskSequence:queueTask(testTaskSequence)
+
+
+repeat
+    status = otherTaskSequence:run()
+until otherTaskSequence.pendingTasks == {}
+
+print('END')
+print("DIAGNOSTICS PART DEUX SUR L'ENGIN")
+for k,v in pairs(otherTaskSequence.pendingTasks) do
+    print(v.name)
+end
+print('===')
+for k,v in pairs(otherTaskSequence.tasksToRun) do
+    print(v.name)
+end
+print('===')
+for k,v in pairs(otherTaskSequence.registeredTasks) do
+    print(v.name)
+    print(v.registeredOutcome)
+end
+print('END DIAGNOSTICS.')

@@ -1,32 +1,35 @@
 local module = loadfile('/MWP/lib/module.lua')()
+local tableClone = module.require('/MWP/lib/notyourmomslua.lua').tableClone
+local generateUID = module.require('/MWP/lib/notyourmomslua.lua').generateUID
 local Class = module.require('/MWP/lib/class.lua').Class
 
 -- SOME HELPER STUFF --
 EMPTY_PROPERTY 	= '__empty__'
 EMPTY_BOOL 		= false
-EMPTY_TABLE 	= {}
 
 -- @INTERFACE YieldingInterface
 YieldingInterface = {
     isActive 				= EMPTY_BOOL,
     enabled 				= EMPTY_BOOL,
-    enclosingTaskSequence 	= EMPTY_TABLE,
-    requiredPromises 		= EMPTY_TABLE,
+    enclosingTaskSequence 	= {},
+    requiredPromises 		= {},
     name 					= EMPTY_PROPERTY,
 
     registerToTaskSequence  = function() end,
     enable                  = function() end,
-    disable                 = function() end
+    disable                 = function() end,
+    run                     = function() end
 }
 
 -- @CLASS Promise @PARAMS {questionData, askingTask}
 Promise = Class {
     constructor = function(self, params)
-        _questionData = assert(params.questionData, "Attempted to create a promise without specifying questionData!")
+        _questionData = params.questionData
         _askingTask = assert(params.askingTask, "Attempted to create a promise without specifying askingTask!")
         _kind = assert(params.kind, "Attempted to create a promise without specifying kind!")
 
         local obj = {
+            UID             = generateUID(),
             questionData 	= _questionData,
             askingTask 		= _askingTask,
             kind 			= _kind
@@ -34,10 +37,11 @@ Promise = Class {
         return obj
     end,
 
+    UID                 = EMPTY_PROPERTY,
     dataWasAccessed     = EMPTY_BOOL,
     resolved            = EMPTY_BOOL,
-    answerData          = EMPTY_TABLE,
-    questionData        = EMPTY_TABLE,
+    answerData          = {},
+    questionData        = {},
     askingTask          = EMPTY_PROPERTY,
     kind                = EMPTY_PROPERTY
 }
@@ -65,8 +69,8 @@ Task = Class {
 
     isActive                = EMPTY_BOOL,
     enabled                 = EMPTY_BOOL,
-    enclosingTaskSequence   = EMPTY_TABLE,
-    requiredPromises        = EMPTY_TABLE,
+    enclosingTaskSequence   = {},
+    requiredPromises        = {},
     name                    = EMPTY_PROPERTY,
     index                   = EMPTY_PROPERTY,
     registeredOutcome       = EMPTY_PROPERTY,
@@ -74,8 +78,8 @@ Task = Class {
     action                  = EMPTY_PROPERTY,
     condition               = function() return true end,
 
-    registerToTaskSequence = function(self, taskSequence)
-        self.enclosingTaskSequence = taskSequence
+	registerToTaskSequence = function(self, taskSequence)
+		self.enclosingTaskSequence = taskSequence
     end,
 
     checkCondition = function(self)
@@ -88,6 +92,10 @@ Task = Class {
 
     yield = function(self, requiredPromises)
         self.isActive = false
+        print(self.name .. ' is yielding. Received required promises ' .. tostring(requiredPromises))
+        if not requiredPromises then
+            requiredPromises = {}
+        end
         self.requiredPromises = requiredPromises
         return coroutine.yield()
     end,
@@ -95,6 +103,7 @@ Task = Class {
     terminate = function(self, finalData)
         self.isActive = false
         self:disable()
+        self.enclosingTaskSequence:unqueueTask(self)
         return finalData
     end,
 
@@ -105,11 +114,12 @@ Task = Class {
             if not self.requiredPromises['os_pullEvent'] then
                 -- This code is run if the task last yielded by calling self:yield()
                 returnedData = {coroutine.resume(self.action, self)}
+                print("Received returned data " .. textutils.serialise(returnedData))
             else
                 -- This code is run if the task last yielded by calling coroutine.yield.
                 os_event_promise = self.requiredPromises['os_pullEvent'] -- The os_event_promise handles situations where the task calls coroutine.yield() without calling self:yield(). I.e. when rednet yields or gps... etc...
                 if os_event_promise.resolved then
-                    returnedData = {coroutine.resume(self.action, os_event_promise.answerData)}
+                    returnedData = {coroutine.resume(self.action, unpack(os_event_promise.answerData))}
                     self.requiredPromises['os_pullEvent'] = nil
                 else
                     -- Our os_pullEvent promise wasn't fullfilled
@@ -126,11 +136,13 @@ Task = Class {
                 -- task likely did not call self:yield(). Hence, we presume the
                 -- task called coroutine.yield(), and we wrap the event of the
                 -- coroutine into a promise to interface with the task API.
+                print('Generating an OS event for ' .. self.name)
                 local os_event = returnedData[1]
-                table.insert(self.requiredPromises, self:requestPromise {
-                    questionData = returnedData,
-                    kind = os_event
-                })
+                print('OS Event: ' .. tostring(os_event))
+                self.requiredPromises['os_pullEvent'] = self:requestPromise {
+                    questionData = os_event,
+                    kind = 'os_pullEvent'
+                }
                 self.isActive = false
             end
 
@@ -150,7 +162,7 @@ Task = Class {
     requestPromise = function(self, attributes)
         local promise = Promise:new{
             askingTask = self,
-            questionData = assert(attributes.questionData, self.name .. " attempted to requestPromise without specifying questionData!"),
+            questionData = attributes.questionData,
             kind = assert(attributes.kind, self.name .. " attempted to requestPromise without specifying kind")
         }
         return promise
@@ -169,6 +181,16 @@ Task = Class {
         end
     end,
 
+    findPromisesToResolve = function(self)
+        local promisesToResolve = {}
+        for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
+            if promise.kind == self.registeredOutcome then
+                table.insert(promisesToResolve, promise)
+            end
+        end
+        return promisesToResolve
+    end,
+
     disable = function(self)
         self.enabled = false
     end,
@@ -177,6 +199,79 @@ Task = Class {
         self.enabled = true
     end
 
+}
+
+-- @CLASS OSEventHandler @PARAMS {name}
+OSEventHandler = Class {
+    implements = {YieldingInterface},
+
+    constructor = function(self)
+        local obj = {}
+
+        obj.name 				= 'OSEventHandler'
+        obj.registeredOutcome 	= 'os_pullEvent'
+        obj.enabled 			= true
+
+        return obj
+    end,
+
+    isActive                = EMPTY_BOOL,
+    enclosingTaskSequence   = {},
+    name 	                = EMPTY_PROPERTY,
+    index               	= EMPTY_PROPERTY,
+    enabled                 = EMPTY_BOOL,
+    requiredPromises        = {}, -- We do not need required promises, but we want to interface with YieldingInterface.
+
+    registerToTaskSequence = function(self, taskSequence)
+        self.enclosingTaskSequence = taskSequence
+    end,
+
+    yield = function(self)
+        self.isActive = false
+        return true
+    end,
+
+    terminate = function(self)
+        print('Attempted to terminate an OSEventHandler. You cannot do that.')
+    end,
+
+    run = function(self)
+        self.isActive = true
+        local promisesToResolve = self:findPromisesToResolve()
+
+        for _,promise in pairs(promisesToResolve) do
+            print('Found a promise of type ' .. promise.kind)
+            if promise.kind == 'os_pullEvent' then
+                if not promise.questionData then
+                    promise.answerData = {os.pullEventRaw()}
+                else
+                    promise.answerData = {os.pullEventRaw(promise.questionData)}
+                end
+                promise.resolved = true
+            end
+        end
+
+        self.enclosingTaskSequence:unqueueTask(self)
+        return self:yield()
+    end,
+
+    findPromisesToResolve = function(self)
+        local promisesToResolve = {}
+        for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
+            if promise.kind == self.registeredOutcome then
+                table.insert(promisesToResolve, promise)
+            end
+        end
+        return promisesToResolve
+    end,
+
+    disable = function(self)
+        self.enabled = false
+    end,
+
+    enable = function(self)
+        self.enabled = true
+    end
 }
 
 -- @CLASS TaskSequence @PARAMS {name}
@@ -194,20 +289,27 @@ TaskSequence = Class {
 
     isActive               = EMPTY_BOOL,
     enabled                = EMPTY_BOOL,
-    enclosingTaskSequence  = EMPTY_TABLE,
-    pendingTasks           = EMPTY_TABLE,
-    registeredTasks        = EMPTY_TABLE,
-    ranTasks               = EMPTY_TABLE,
-    requiredPromises       = EMPTY_TABLE,
+    enclosingTaskSequence  = {},
+    pendingTasks           = {},
+    registeredTasks        = {},
+    tasksToRun             = {},
+    ranTasks               = {},
+    requiredPromises       = {},
+    resolvablePromises     = {},
     name                   = EMPTY_PROPERTY,
 
     yield = function(self, status)
+        print('Yielding ' .. self.name)
         self.isActive = false
         return status
     end,
 
     registerToTaskSequence = function(self, taskSequence)
         self.enclosingTaskSequence = taskSequence
+    end,
+
+    registerToRegisteredTasks = function(self,task)
+        self.registeredTasks[task.registeredOutcome] = task
     end,
 
     checkPromiseFulfillment = function(self, promise)
@@ -218,18 +320,28 @@ TaskSequence = Class {
 
         if self.enabled then
             self.isActive = true
+            self:cleanupResolvablePromises()
             repeat
                 local noYieldingObjectsLeft, nextYieldingObject = self:getNextYieldingObject()
                 if not nextYieldingObject then
                     print('No tasks to run in ' .. self.name)
-                    self:yield(true) -- This boolean will be passed to "ok" in the enclosingTaskSequence. Do we want that? Perhaps we should return two values: one for "ok" and another to deterined whether this taskSequence was enabled or disabled.
+                    return self:yield(true) -- This boolean will be passed to "ok" in the enclosingTaskSequence. Do we want that? Perhaps we should return two values: one for "ok" and another to deterined whether this taskSequence was enabled or disabled.
                 else
                     local ok, returnedData = nextYieldingObject:run()
-                    for i, promise in ipairs(nextYieldingObject.requiredPromises) do
-                        if self:checkPromiseFulfillment(promise) then
-                            self:queueTask(self.registeredTasks[promise.kind])
-                        else
-                            table.insert(self.requiredPromises, promise)
+                    print('Finished running ' .. nextYieldingObject.name)
+                    if nextYieldingObject.requiredPromises then
+                        for _, promise in pairs(nextYieldingObject.requiredPromises) do
+                            if self:checkPromiseFulfillment(promise) then
+                                if not self.resolvablePromises[promise.UID] then
+                                    print('Queueing a task to resolve a promise')
+                                    self:queueTask(self.registeredTasks[promise.kind])
+                                    self.resolvablePromises[promise.UID] = promise
+                                end
+                            else
+                                if not self.requiredPromises[promise.UID] then
+                                    self.requiredPromises[promise.UID] = promise
+                                end
+                            end
                         end
                     end
 
@@ -239,9 +351,10 @@ TaskSequence = Class {
                     end
                 end
             until noYieldingObjectsLeft
-            self:yield(true)
+            print('About to yield ' .. self.name)
+            return self:yield(true)
         else
-            self:yield(false)
+            return self:yield(false)
         end
     end,
 
@@ -254,27 +367,45 @@ TaskSequence = Class {
     end,
 
     queueTask = function(self, task)
+        print('Received queueTask request')
         table.insert(self.pendingTasks, task)
+        task.enclosingTaskSequence = self
         task.index = #self.pendingTasks
     end,
 
     unqueueTask = function(self, task)
+        print('Received unqueueTask request')
         table.remove(self.pendingTasks, task.index)
         task.index = nil
     end,
 
     getNextYieldingObject = function(self)
         if #self.tasksToRun <= 0 then
-            self.tasksToRun = self.pendingTasks
+            self.tasksToRun = tableClone(self.pendingTasks)
+            print('No tasks to run')
             return true, nil -- We don't have a new yielding object to run until the enclosingTaskSequence queues this again.
 
             else
             local nextYieldingObject = self.tasksToRun[1]
             table.remove(self.tasksToRun, 1)
+            print('Returning next task to run: ' .. nextYieldingObject.name)
             return false, nextYieldingObject
         end
-
+        print('No tasks to run')
         return true, nil
+    end,
+
+    cleanupResolvablePromises = function(self)
+        local promisesToDelete = {}
+        for i,v in pairs(self.resolvablePromises) do
+            if v.dataWasAccessed then
+                table.insert(promisesToDelete, i)
+            end
+        end
+
+        for i,v in pairs(promisesToDelete) do
+            self.resolvablePromises[i] = nil
+        end
     end
 }
 
