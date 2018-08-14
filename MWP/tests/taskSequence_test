@@ -2,7 +2,7 @@ local module = loadfile('/MWP/lib/module.lua')()
 module.clear_module_cache()
 local tasklib = module.require('/MWP/lib/task3.lua')
 oldPrint = print
-
+oldPullEvent = os.pullEventRaw
 
 
 _G['print'] = function(string)
@@ -10,6 +10,11 @@ _G['print'] = function(string)
     log.writeLine(string)
     log.close()
     oldPrint(string)
+end
+
+_G['os.pullEventRaw'] = function(event,...)
+    print('Calling os.pullEvent with event ' .. tostring(event))
+    oldPullEvent(event,...)
 end
 
 local testTask1 = tasklib.Task:new {

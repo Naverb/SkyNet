@@ -22,8 +22,16 @@ function Class(attributes)
     end
 
     if attributes.implements then
-        for _, interface in pairs (attributes.implements) do
-            for key, attribute in pairs(interface) do
+        if #attributes.implements > 0 then
+            for _, interface in pairs (attributes.implements) do
+                for key, attribute in pairs(interface) do
+                    if new_class[key] == nil or type(attribute) ~= type(new_class[key]) then
+                        error('Class failed to implement ' .. key .. '.',2) -- Raise it up an env to the caller.
+                    end
+                end
+            end
+        else
+            for key, attribute in attributes.implements do -- If the table is of length 0, the implements table *is* an interface.
                 if new_class[key] == nil or type(attribute) ~= type(new_class[key]) then
                     error('Class failed to implement ' .. key .. '.',2) -- Raise it up an env to the caller.
                 end
@@ -40,7 +48,7 @@ function Class(attributes)
                     _class[key] = result
                     return _class[key]
                 else
-                    error(result,2)
+                    error(result,2) --Should this be 3?
                 end
             end
         else

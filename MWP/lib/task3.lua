@@ -113,7 +113,7 @@ Task = Class {
 
             if not self.requiredPromises['os_pullEvent'] then
                 -- This code is run if the task last yielded by calling self:yield()
-                returnedData = {coroutine.resume(self.action, self)}
+                returnedData = {coroutine.resume(self.action)}
                 print("Received returned data " .. textutils.serialise(returnedData))
             else
                 -- This code is run if the task last yielded by calling coroutine.yield.
@@ -239,15 +239,46 @@ OSEventHandler = Class {
         self.isActive = true
         local promisesToResolve = self:findPromisesToResolve()
 
+        local function waitOrTimeout(promise)
+            local response
+            local timeout = os.startTimer(30) -- 30 seconds is probably a long time.
+            if (not promise.questionData) or (promise.questionData == {}) then
+                local done = false
+                repeat
+                    print('Pulling a null event now...')
+                    response = {os.pullEventRaw()}
+                    if response[1] == 'timer' and response[2] == timeout then
+                        done = true
+                        response = nil
+                    else
+                        promise.answerData = response
+                        promise.resolved = true
+                        done = true
+                    end
+                until done
+                print('Event pulled.')
+            else
+                local done = false
+                repeat
+                    print('Pulling an event now...' .. textutils.serialise(promise.questionData))
+                    response = {os.pullEventRaw(promise.questionData)}
+                    if response[1] == 'timer' and response[2] == timeout then
+                        done = true
+                        response = nil
+                    else
+                        promise.answerData = response
+                        promise.resolved = true
+                        done = true
+                    end
+                until done
+                print('Event pulled.')
+            end
+        end
+
         for _,promise in pairs(promisesToResolve) do
             print('Found a promise of type ' .. promise.kind)
             if promise.kind == 'os_pullEvent' then
-                if not promise.questionData then
-                    promise.answerData = {os.pullEventRaw()}
-                else
-                    promise.answerData = {os.pullEventRaw(promise.questionData)}
-                end
-                promise.resolved = true
+                waitOrTimeout(promise)
             end
         end
 
