@@ -1,21 +1,6 @@
 local module = loadfile('/MWP/lib/module.lua')()
 module.clear_module_cache()
 local tasklib = module.require('/MWP/lib/task3.lua')
-oldPrint = print
-oldPullEvent = os.pullEventRaw
-
-
-_G['print'] = function(string)
-    local log = fs.open('logfile', 'a')
-    log.writeLine(string)
-    log.close()
-    oldPrint(string)
-end
-
-_G['os.pullEventRaw'] = function(event,...)
-    print('Calling os.pullEvent with event ' .. tostring(event))
-    oldPullEvent(event,...)
-end
 
 local testTask1 = tasklib.Task:new {
     name = 'Test1',
@@ -53,8 +38,20 @@ local testTask1 = tasklib.Task:new {
         promise.dataWasAccessed = true
         print(answer.exampleAnswer)
 
-        response = gps.locate()
-        print('Just resumed from yield. Received: ' .. response)
+        print('Waiting for a key press [e]')
+        repeat
+            local event, key = os.pullEvent('key')
+            print(' ------> Received event ' .. event)
+        until key == keys.e
+        print('Done waiting')
+
+
+        response = vector.new(gps.locate())
+        print('Just resumed from yield. Received: ' .. response:tostring())
+
+        -- Hacky stuff to terinate the code
+        thisTask.enclosingTaskSequence.enclosingTaskSequence:unqueueTask(thisTask.enclosingTaskSequence)
+
         return thisTask:terminate("We're done buddy.")
     end
 }
@@ -79,6 +76,7 @@ local testTask2 = tasklib.Task:new {
 
             print('Resolved the promises')
             thisTask.enclosingTaskSequence:unqueueTask(thisTask)
+
             thisTask:yield()
         end
     end
@@ -99,27 +97,15 @@ testTaskSequence:registerToRegisteredTasks(testTask2)
 otherTaskSequence:registerToRegisteredTasks(test_os_task)
 
 testTaskSequence:queueTask(testTask1)
-print('Running ' .. otherTaskSequence.name)
 
 otherTaskSequence:queueTask(testTaskSequence)
 
 
 repeat
+    local doBreak = true
     status = otherTaskSequence:run()
-until otherTaskSequence.pendingTasks == {}
-
-print('END')
-print("DIAGNOSTICS PART DEUX SUR L'ENGIN")
-for k,v in pairs(otherTaskSequence.pendingTasks) do
-    print(v.name)
-end
-print('===')
-for k,v in pairs(otherTaskSequence.tasksToRun) do
-    print(v.name)
-end
-print('===')
-for k,v in pairs(otherTaskSequence.registeredTasks) do
-    print(v.name)
-    print(v.registeredOutcome)
-end
-print('END DIAGNOSTICS.')
+    for k,v in pairs(otherTaskSequence.pendingTasks) do
+        doBreak = false
+        break
+    end
+until doBreak

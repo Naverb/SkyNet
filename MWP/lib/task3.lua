@@ -114,13 +114,12 @@ Task = Class {
             if not self.requiredPromises['os_pullEvent'] then
                 -- This code is run if the task last yielded by calling self:yield()
                 returnedData = {coroutine.resume(self.action)}
-                print("Received returned data " .. textutils.serialise(returnedData))
             else
                 -- This code is run if the task last yielded by calling coroutine.yield.
                 os_event_promise = self.requiredPromises['os_pullEvent'] -- The os_event_promise handles situations where the task calls coroutine.yield() without calling self:yield(). I.e. when rednet yields or gps... etc...
                 if os_event_promise.resolved then
+                    os_event_promise.dataWasAccessed = true
                     returnedData = {coroutine.resume(self.action, unpack(os_event_promise.answerData))}
-                    self.requiredPromises['os_pullEvent'] = nil
                 else
                     -- Our os_pullEvent promise wasn't fullfilled
                     self.isActive = false
@@ -131,22 +130,20 @@ Task = Class {
             local ok = returnedData[1]
             table.remove(returnedData, 1)
 
+            self:cleanupRequiredPromises()
+
             if self.isActive then
                 -- The task yielded somehow, but since self.isActive is true, the
                 -- task likely did not call self:yield(). Hence, we presume the
                 -- task called coroutine.yield(), and we wrap the event of the
                 -- coroutine into a promise to interface with the task API.
-                print('Generating an OS event for ' .. self.name)
-                local os_event = returnedData[1]
-                print('OS Event: ' .. tostring(os_event))
+                local os_event = {returnedData[1]}
                 self.requiredPromises['os_pullEvent'] = self:requestPromise {
                     questionData = os_event,
                     kind = 'os_pullEvent'
                 }
                 self.isActive = false
             end
-
-            self:cleanupRequiredPromises()
 
             return ok, returnedData
         else
@@ -176,8 +173,8 @@ Task = Class {
             end
         end
 
-        for i,v in pairs(promisesToDelete) do
-            self.requiredPromises[i] = nil
+        for _,v in pairs(promisesToDelete) do
+            self.requiredPromises[v] = nil
         end
     end,
 
@@ -239,50 +236,27 @@ OSEventHandler = Class {
         self.isActive = true
         local promisesToResolve = self:findPromisesToResolve()
 
-        local function waitOrTimeout(promise)
-            local response
-            local timeout = os.startTimer(30) -- 30 seconds is probably a long time.
-            if (not promise.questionData) or (promise.questionData == {}) then
-                local done = false
-                repeat
-                    print('Pulling a null event now...')
-                    response = {os.pullEventRaw()}
-                    if response[1] == 'timer' and response[2] == timeout then
-                        done = true
-                        response = nil
-                    else
-                        promise.answerData = response
-                        promise.resolved = true
-                        done = true
-                    end
-                until done
-                print('Event pulled.')
-            else
-                local done = false
-                repeat
-                    print('Pulling an event now...' .. textutils.serialise(promise.questionData))
-                    response = {os.pullEventRaw(promise.questionData)}
-                    if response[1] == 'timer' and response[2] == timeout then
-                        done = true
-                        response = nil
-                    else
-                        promise.answerData = response
-                        promise.resolved = true
-                        done = true
-                    end
-                until done
-                print('Event pulled.')
-            end
-        end
+        local data = {os.pullEventRaw()}
+        local event = data[1]
 
+        local allPromisesResolved = true
         for _,promise in pairs(promisesToResolve) do
-            print('Found a promise of type ' .. promise.kind)
             if promise.kind == 'os_pullEvent' then
-                waitOrTimeout(promise)
+                if not promise.questionData[1] then
+                    promise.answerData = data
+                    promise.resolved = true
+                elseif promise.questionData[1] == event then
+                    promise.answerData = data
+                    promise.resolved = true
+                else
+                    allPromisesResolved = false
+                end
             end
         end
 
-        self.enclosingTaskSequence:unqueueTask(self)
+        if allPromisesResolved then
+            self.enclosingTaskSequence:unqueueTask(self)
+        end
         return self:yield()
     end,
 
@@ -352,19 +326,18 @@ TaskSequence = Class {
         if self.enabled then
             self.isActive = true
             self:cleanupResolvablePromises()
+            self:cleanupRequiredPromises()
+
             repeat
                 local noYieldingObjectsLeft, nextYieldingObject = self:getNextYieldingObject()
                 if not nextYieldingObject then
-                    print('No tasks to run in ' .. self.name)
                     return self:yield(true) -- This boolean will be passed to "ok" in the enclosingTaskSequence. Do we want that? Perhaps we should return two values: one for "ok" and another to deterined whether this taskSequence was enabled or disabled.
                 else
                     local ok, returnedData = nextYieldingObject:run()
-                    print('Finished running ' .. nextYieldingObject.name)
                     if nextYieldingObject.requiredPromises then
                         for _, promise in pairs(nextYieldingObject.requiredPromises) do
                             if self:checkPromiseFulfillment(promise) then
                                 if not self.resolvablePromises[promise.UID] then
-                                    print('Queueing a task to resolve a promise')
                                     self:queueTask(self.registeredTasks[promise.kind])
                                     self.resolvablePromises[promise.UID] = promise
                                 end
@@ -378,11 +351,11 @@ TaskSequence = Class {
 
                     if not ok then
                         print(returnedData[1]) -- If the task terminated with an error, this is the error message.
+                        print('Error running ' .. nextYieldingObject.name .. ' disabling.')
                         nextYieldingObject:disable()
                     end
                 end
             until noYieldingObjectsLeft
-            print('About to yield ' .. self.name)
             return self:yield(true)
         else
             return self:yield(false)
@@ -398,14 +371,12 @@ TaskSequence = Class {
     end,
 
     queueTask = function(self, task)
-        print('Received queueTask request')
         table.insert(self.pendingTasks, task)
         task.enclosingTaskSequence = self
         task.index = #self.pendingTasks
     end,
 
     unqueueTask = function(self, task)
-        print('Received unqueueTask request')
         table.remove(self.pendingTasks, task.index)
         task.index = nil
     end,
@@ -413,17 +384,27 @@ TaskSequence = Class {
     getNextYieldingObject = function(self)
         if #self.tasksToRun <= 0 then
             self.tasksToRun = tableClone(self.pendingTasks)
-            print('No tasks to run')
             return true, nil -- We don't have a new yielding object to run until the enclosingTaskSequence queues this again.
 
             else
             local nextYieldingObject = self.tasksToRun[1]
             table.remove(self.tasksToRun, 1)
-            print('Returning next task to run: ' .. nextYieldingObject.name)
             return false, nextYieldingObject
         end
-        print('No tasks to run')
         return true, nil
+    end,
+
+    cleanupRequiredPromises = function(self)
+        local promisesToDelete = {}
+        for i,v in pairs(self.requiredPromises) do
+            if v.dataWasAccessed then
+                table.insert(promisesToDelete, i)
+            end
+        end
+
+        for _,v in pairs(promisesToDelete) do
+            self.requiredPromises[v] = nil
+        end
     end,
 
     cleanupResolvablePromises = function(self)
@@ -434,8 +415,8 @@ TaskSequence = Class {
             end
         end
 
-        for i,v in pairs(promisesToDelete) do
-            self.resolvablePromises[i] = nil
+        for _,v in pairs(promisesToDelete) do
+            self.resolvablePromises[v] = nil
         end
     end
 }
