@@ -13,6 +13,15 @@ function require(file)
 -- Load a module from a filepath.
     local module
 
+    local function getFileName(path)
+        local filename = fs.getName(path)
+        if string.sub(filename, -4) == '.lua' then
+            return string.sub(filename, 1, -5)
+        else
+            return filename
+        end
+    end
+
     local function loadFromStorage(file)
         -- The file exists, let's load it.
         local module = {}
@@ -76,18 +85,18 @@ function require(file)
                 local package = {}
                 foundFiles = fs.find(path .. '/*')
                 for _,fileTreeElement in ipairs(foundFiles) do
-                    local item = processTree(fileTreeElement,false)
-                    package[fileTreeElement] = item
+                    local filename = getFileName(fileTreeElement)
+                    if string.sub(filename,1,1) ~= '.' then
+                        -- We check if the file is a hidden file that should not
+                        -- be loaded.
+                        local item = processTree(fileTreeElement,false)
+                        package[filename] = item
+                    end
                 end
 
-                local filename = fs.getName(path)
-                if string.sub(filename, -4) == '.lua' then
-                    package.__name = string.sub(filename,1,-5)
-                    package.__path = path
-                else
-                    package.__name = filename
-                    package.__path = path
-                end
+                local filename = getFileName(path)
+                package.__name = filename
+                package.__path = path
 
                 if addToCache then
                     module_cache[package.__path] = package
@@ -106,7 +115,6 @@ function require(file)
     end
 
     return processTree(file, true)
-
 end
 
 return {
