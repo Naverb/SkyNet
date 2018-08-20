@@ -69,6 +69,7 @@ Task = Class {
 
     isActive                = EMPTY_BOOL,
     enabled                 = EMPTY_BOOL,
+    patient                 = EMPTY_BOOL, -- If patient, this task waits until all its promises are resolved before resuming.
     enclosingTaskSequence   = {},
     requiredPromises        = {},
     name                    = EMPTY_PROPERTY,
@@ -93,11 +94,13 @@ Task = Class {
     yield = function(self, requiredPromises)
         self.isActive = false
         print(self.name .. ' is yielding. Received required promises ' .. tostring(requiredPromises))
-        if not requiredPromises then
-            requiredPromises = {}
-        end
-        self.requiredPromises = requiredPromises
+        self.requiredPromises = requiredPromises or {}
         return coroutine.yield()
+    end,
+
+    yieldUntilResolved = function(self, requiredPromises)
+        self.patient = true
+        return self:yield(requiredPromises)
     end,
 
     terminate = function(self, finalData)
@@ -110,6 +113,23 @@ Task = Class {
     run = function(self)
         if self:checkCondition() then
             self.isActive = true
+
+            if self.patient then
+                -- Check if all promises are resolved.
+                local allPromisesResolved = true
+                for _,promise in pairs(self.requiredPromises) do
+                    if not promise.resolved then
+                        allPromisesResolved = false
+                        break
+                    end
+                end
+
+                if not allPromisesResolved then
+                    -- Return here, we are done running the task for now.
+                    self.isActive = false
+                    return true
+                end
+            end
 
             if not self.requiredPromises['os_pullEvent'] then
                 -- This code is run if the task last yielded by calling self:yield()
@@ -148,7 +168,7 @@ Task = Class {
             return ok, returnedData
         else
             self.isActive = false
-            return false
+            return true
         end
     end,
 

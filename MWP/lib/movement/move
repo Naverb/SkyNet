@@ -1,3 +1,5 @@
+local module = loadfile('/MWP/lib/module.lua')()
+local gps2 = module.require('/MWP/lib/movement/gps2')
 
 -- Standard Vectors
 local I = vector.new(1,0,0)
@@ -14,17 +16,17 @@ local K = vector.new(0,0,1)
 --      moving a single block. That way, we can deal with event interrupts, etc..
 
 forward = function ()
-    coroutine.yield('sufficient_fuel')
+    --coroutine.yield('sufficient_fuel')
     return turtle.forward()
 end
 
 up = function ()
-    coroutine.yield('sufficient_fuel')
+    --coroutine.yield('sufficient_fuel')
     return turtle.up()
 end
 
 down = function ()
-    coroutine.yield('sufficient_fuel')
+    --coroutine.yield('sufficient_fuel')
     return turtle.down()
 end
 

@@ -18,7 +18,7 @@ function require(file)
         local module = {}
         local module_env = {}
         setmetatable(module_env, { __index = _G })
-        filename = fs.getName(file)
+        local filename = fs.getName(file)
         if string.sub(filename, -4) == '.lua' then
             module.__name = string.sub(filename,1,-5)
             module.__path = file
@@ -56,19 +56,57 @@ function require(file)
         error('Unknown error loading module ' .. file .. '.')
     end
 
+    local function process(path,addToCache)
+        if not module_cache[path] then
+            module = loadFromSystem(path)
+            if addToCache then
+                module_cache[module.__path] = module
+            end
+        else
+            -- Load the module from module_cache
+            module = module_cache[path]
+        end
+
+        return module
+    end
+
+    local function processTree(path,addToCache)
+        if not module_cache[path] then
+            if fs.isDir(path) then
+                local package = {}
+                foundFiles = fs.find(path .. '/*')
+                for _,fileTreeElement in ipairs(foundFiles) do
+                    local item = processTree(fileTreeElement,false)
+                    package[fileTreeElement] = item
+                end
+
+                local filename = fs.getName(path)
+                if string.sub(filename, -4) == '.lua' then
+                    package.__name = string.sub(filename,1,-5)
+                    package.__path = path
+                else
+                    package.__name = filename
+                    package.__path = path
+                end
+
+                if addToCache then
+                    module_cache[package.__path] = package
+                end
+                return package
+            else
+                return process(path,addToCache)
+            end
+        else
+            return module_cache[path]
+        end
+    end
+
     if type(file) ~= 'string' then
         error('loadmodule requires a string as argument.')
     end
 
-    if not module_cache[file] then
-        module = loadFromSystem(file)
-        module_cache[module.__path] = module
-    else
-        -- Load the module from module_cache
-        module = module_cache[file]
-    end
+    return processTree(file, true)
 
-    return module
 end
 
 return {

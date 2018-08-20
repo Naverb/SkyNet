@@ -1,6 +1,7 @@
 local module = loadfile('/MWP/lib/module.lua')()
 module.clear_module_cache()
 local tasklib = module.require('/MWP/lib/task3.lua')
+local moveAPI = module.require('/MWP/lib/movement/move')
 
 local testTask1 = tasklib.Task:new {
     name = 'Test1',
@@ -48,6 +49,8 @@ local testTask1 = tasklib.Task:new {
 
         response = vector.new(gps.locate())
         print('Just resumed from yield. Received: ' .. response:tostring())
+
+        moveAPI.goTo(response + vector.new(0,10,0))
 
         -- Hacky stuff to terinate the code
         thisTask.enclosingTaskSequence.enclosingTaskSequence:unqueueTask(thisTask.enclosingTaskSequence)
