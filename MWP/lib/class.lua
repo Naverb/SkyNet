@@ -18,22 +18,26 @@ function Class(attributes)
     end
 
     for key, attribute in pairs(attributes) do
-		new_class[key] = attribute -- For any methods defined in the parameters of Class, add them to our class that we are creating.
+        new_class[key] = attribute -- For any methods defined in the parameters of Class, add them to our class that we are creating.
     end
 
     if attributes.implements then
         if #attributes.implements > 0 then
-            for _, interface in pairs (attributes.implements) do
+            for _, interface in pairs(attributes.implements) do
                 for key, attribute in pairs(interface) do
-                    if new_class[key] == nil or type(attribute) ~= type(new_class[key]) then
-                        error('Class failed to implement ' .. key .. '.',2) -- Raise it up an env to the caller.
+                    if string.sub(key,1,2) ~= '__' then -- If the interface is a module, we want to ignore module metadata.
+                        if new_class[key] == nil or type(attribute) ~= type(new_class[key]) then
+                            error('Class failed to implement ' .. key .. '.',2) -- Raise it up an env to the caller.
+                        end
                     end
                 end
             end
         else
-            for key, attribute in attributes.implements do -- If the table is of length 0, the implements table *is* an interface.
-                if new_class[key] == nil or type(attribute) ~= type(new_class[key]) then
-                    error('Class failed to implement ' .. key .. '.',2) -- Raise it up an env to the caller.
+            for key, attribute in pairs(attributes.implements) do -- If the table is of length 0, the implements table *is* an interface.
+                if string.sub(key,1,2) ~= '__' then -- If the interface is a module, we want to ignore module metadata.
+                    if new_class[key] == nil or type(attribute) ~= type(new_class[key]) then
+                        error('Class failed to implement ' .. key .. '.',2) -- Raise it up an env to the caller.
+                    end
                 end
             end
         end
@@ -103,4 +107,5 @@ function Class(attributes)
     return new_class
 end
 
+_module = module.exportFunction(Class)
 return Class -- For loadfile
