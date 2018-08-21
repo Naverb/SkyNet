@@ -1,5 +1,5 @@
 local module = loadfile('/MWP/lib/module.lua')()
-local gps2 = module.require('/MWP/lib/movement/gps2')
+local gps2 = module.require('/MWP/lib/movement/gps2.lua')
 
 -- Standard Vectors
 local I = vector.new(1,0,0)
@@ -65,8 +65,8 @@ local function traverseTrajectory(trajectory, breakBlocks)
         for i = 1,math.abs(dz) do
             if not forward() then
                 if breakBlocks then
-                    turtle.dig()                -- FIXME? COROUTINE?
-                    forward()                       -- turtle.dig() should not call a coroutine.yield() because it does not use any fuel.
+                    turtle.dig()
+                    forward()
                 end
             end
         end
@@ -77,7 +77,7 @@ local function traverseTrajectory(trajectory, breakBlocks)
         for i = 1,math.abs(dy) do
             if not up() then
                 if breakBlocks then
-                    turtle.digUp()              -- FIXME? COROUTINE?
+                    turtle.digUp()
                     up()
                 end
             end
@@ -113,8 +113,6 @@ function goTo(destination, _breakBlocks, _tolerance)
         end
 
     until trajectory:length() < tolerance
-    -- Hopefully this grabs scope from the local variable inside
-
     -- FIX ME until trajectory:round():length() < tolerance
 end
 

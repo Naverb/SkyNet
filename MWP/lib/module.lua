@@ -33,6 +33,14 @@ function require(file)
         end
     end
 
+    local function normalizePath(path)
+        if string.sub(path,1,1) == '/' then
+            return string.sub(path,2)
+        else
+            return path
+        end
+    end
+
     local function loadFromStorage(file)
         -- The file exists, let's load it.
         local module = {}
@@ -63,10 +71,10 @@ function require(file)
             local filename = fs.getName(file)
             if string.sub(filename, -4) == '.lua' then
                 module.__name = string.sub(filename,1,-5)
-                module.__path = file
+                module.__path = normalizePath(file)
             else
                 module.__name = filename
-                module.__path = file
+                module.__path = normalizePath(file)
             end
 
             return module
@@ -104,6 +112,8 @@ function require(file)
             return true
         elseif string.sub(file,-4) == '.doc' then
             return true
+        elseif string.sub(file,1,2) == '__' then
+            return true
         else
             return false
         end
@@ -120,14 +130,14 @@ function require(file)
                         filename = getFileName(fileTreeElement)
                         -- We check if the file is a hidden file that should not
                         -- be loaded.
-                        local item = processTree(fileTreeElement,false)
+                        local item = processTree(fileTreeElement,true) -- Is there any reason we should not add to cache?
                         package[filename] = item
                     end
                 end
 
                 local filename = getFileName(path)
                 package.__name = filename
-                package.__path = path
+                package.__path = normalizePath(path)
 
                 if addToCache then
                     module_cache[package.__path] = package

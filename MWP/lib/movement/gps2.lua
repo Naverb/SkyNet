@@ -1,21 +1,17 @@
-
 -- Standard Vectors
-    local I = vector.new(1,0,0)
-    local J = vector.new(0,1,0)
-    local K = vector.new(0,0,1)
+local I = vector.new(1,0,0)
+local J = vector.new(0,1,0)
+local K = vector.new(0,0,1)
 
 ------------------------------------------------------
 ------------------ GET GPS INFO ----------------------
 
-print('Loading getLocation')
 function getLocation()
-    print('Getting GPS Location')
     -- Get location of computer using rednet
     -- We note that gps.locate is based on the rednet API, which runs coroutine.yield.
     --  Hence, we tell the system to run this line without yielding (see task.noYield),
     --  because we do not want to yield all of getLocation() in the middle of a task.
     local loc = vector.new(gps.locate(5))  --task.noYield(gps.locate)(5))
-    print('Acquired GPS location')
     if not loc then
         return true, nil
         -- We return error = true and loc = nil
@@ -24,7 +20,6 @@ function getLocation()
     end
 end
 
-print('Loading getOrientation')
 function getOrientation(localMode)
     -- Get orientation of turtle (if localMode,
     -- then use the turtle's stored direction)
@@ -68,7 +63,6 @@ function getOrientation(localMode)
         until loc2_ready
 
         if loc2_ready then
-            print('loc2')
             err, loc2 = getLocation()
         else
             loc2 = loc1
@@ -92,18 +86,10 @@ function getOrientation(localMode)
     end
 end
 
-print('Loading local_orientation')
 -- Set the initial value of the local_orientation vector
-if not _G.gps2 then
-    -- We check if local_orientation exists because OS.loadAPI appears to
-    -- run this line each time loadAPI is called, and we only want to intialize
-    -- local orientation once.
-    local_orientation = getOrientation(false)
-else
-    local_orientation = gps2.local_orientation
-end
+print('Getting orientation')
+local_orientation = getOrientation(false)
 
-print('Loading getTrajectory')
 function getTrajectory(dest)
     -- Calculate the vector trajectory between destination from current location
     local err, loc = getLocation()
@@ -115,11 +101,9 @@ function getTrajectory(dest)
     end
 end
 
-
-
 ------------------------------------------------------
 ----------------- ORIENT TURTLE ----------------------
-print('Loading orientTurtle')
+
 -- Rotate until turtle matches given orientation
 function orientTurtle(direction, localMode)
     -- Let's make sure the direction vector is nonzero
@@ -147,5 +131,3 @@ function orientTurtle(direction, localMode)
         local_orientation = direction
     end
 end
-
-print('Completed GPS2')
