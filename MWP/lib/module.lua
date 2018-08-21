@@ -144,7 +144,18 @@ function require(file)
                 end
                 return package
             else
-                return process(path,addToCache)
+                --[[
+                    To ensure that we don't load the same module twice, we
+                    normalize the format of the path to prevent slight formatting
+                    differences to inhibit the module APIs ability to identify
+                    already loaded modules.
+
+                    I.e.
+
+                    lib/foo and /lib/foo are the same path, so if lib/foo is
+                    loaded, then /lib/foo is loaded.
+                ]]
+                return process(normalizePath(path),addToCache)
             end
         else
             return module_cache[path]

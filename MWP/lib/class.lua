@@ -1,7 +1,7 @@
 local module = loadfile('/MWP/lib/module.lua')()
 local tableClone = module.require('/MWP/lib/notyourmomslua.lua').tableClone
 
--- @FUNCTION CCLASS @PARAMS {metatable, constructor, extends [, ...]}
+-- @FUNCTION CCLASS @PARAMS {metatable, constructor, extends, implements [, ...]}
 function Class(attributes)
     local new_class = {}
     local inst_mt

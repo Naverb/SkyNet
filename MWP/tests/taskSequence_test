@@ -66,11 +66,17 @@ local testTask1 = tasklib.Task:new {
         print('Done waiting')
 
 
-        response = vector.new(gps.locate())
+        local response = vector.new(gps.locate())
+        local original_location = movelib.Waypoint:new('Home', response)
         print('Just resumed from yield. Received: ' .. response:tostring())
 
         movelib.move.goTo(response + vector.new(0,10,0))
-        movelib.move.goTo(response)
+        local dest = movelib.Waypoint:new('Dest', vector.new(gps.locate()))
+
+        original_location:go()
+        dest:go()
+
+        movelib.Waypoint.previous_location:go()
 
         return thisTask:terminate("We're done buddy.")
     end
