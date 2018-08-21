@@ -37,7 +37,9 @@ OSEventHandler = Class {
     end,
 
     terminate = function(self)
-        print('Attempted to terminate an OSEventHandler. You cannot do that.')
+        self.isActive = false
+        self.enclosingTaskSequence:unqueueTask(self)
+        return true
     end,
 
     run = function(self)
@@ -63,9 +65,10 @@ OSEventHandler = Class {
         end
 
         if allPromisesResolved then
-            self.enclosingTaskSequence:unqueueTask(self)
+            return self:terminate()
+        else
+            return self:yield()
         end
-        return self:yield()
     end,
 
     findPromisesToResolve = function(self)

@@ -44,6 +44,10 @@ Task = Class {
 		self.enclosingTaskSequence = taskSequence
     end,
 
+    unqueueFromTaskSequence = function(self)
+        self.enclosingTaskSequence:unqueueTask(self)
+    end,
+
     checkCondition = function(self)
         if self.enabled then
             return self:condition()
@@ -54,9 +58,8 @@ Task = Class {
 
     yield = function(self, requiredPromises)
         self.isActive = false
-        print(self.name .. ' is yielding. Received required promises ' .. tostring(requiredPromises))
         self.requiredPromises = requiredPromises or {}
-        return coroutine.yield()
+        return true, coroutine.yield()
     end,
 
     yieldUntilResolved = function(self, requiredPromises)
@@ -66,9 +69,8 @@ Task = Class {
 
     terminate = function(self, finalData)
         self.isActive = false
-        self:disable()
         self.enclosingTaskSequence:unqueueTask(self)
-        return finalData
+        return true, finalData
     end,
 
     run = function(self)

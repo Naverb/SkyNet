@@ -32,10 +32,9 @@ TaskSequence = Class {
     resolvablePromises     = {},
     name                   = EMPTY_PROPERTY,
 
-    yield = function(self, status)
-        print('Yielding ' .. self.name)
+    yield = function(self, ...)
         self.isActive = false
-        return status
+        return ...
     end,
 
     registerToTaskSequence = function(self, taskSequence)
@@ -87,7 +86,7 @@ TaskSequence = Class {
             until noYieldingObjectsLeft
             return self:yield(true)
         else
-            return self:yield(false)
+            return self:yield(true)
         end
     end,
 
@@ -111,6 +110,15 @@ TaskSequence = Class {
     end,
 
     getNextYieldingObject = function(self)
+        if #self.pendingTasks < 1 then
+            if self.enclosingTaskSequence.name then -- We check if the enclosing task sequence is actually an instantiated TaskSequence.
+                self.enclosingTaskSequence:unqueueTask(self)
+            else
+                -- This TaskSequence does not have an enclosing TaskSequence, so
+                -- we disable self in order to terminate the program.
+                self:disable()
+            end
+        end
         if #self.tasksToRun <= 0 then
             self.tasksToRun = tableClone(self.pendingTasks)
             return true, nil -- We don't have a new yielding object to run until the enclosingTaskSequence queues this again.
