@@ -16,8 +16,18 @@ Promise = Class {
             UID             = generateUID(),
             questionData 	= _questionData,
             askingTask 		= _askingTask,
-            kind 			= _kind
         }
+
+        -- Promise.kind can either be a string or an array of strings. If
+        -- Promise.kind is an array, a TaskSequence will check for tasks that
+        -- can fulfill the promise in the order of the kinds listed in the
+        -- array.
+
+        if type(_kind) == 'table' then
+            obj.kind = _kind
+        else
+            obj.kind = {_kind}
+        end
         return obj
     end,
 

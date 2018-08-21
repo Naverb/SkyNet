@@ -51,16 +51,14 @@ OSEventHandler = Class {
 
         local allPromisesResolved = true
         for _,promise in pairs(promisesToResolve) do
-            if promise.kind == 'os_pullEvent' then
-                if not promise.questionData[1] then
-                    promise.answerData = data
-                    promise.resolved = true
-                elseif promise.questionData[1] == event then
-                    promise.answerData = data
-                    promise.resolved = true
-                else
-                    allPromisesResolved = false
-                end
+            if not promise.questionData[1] then
+                promise.answerData = data
+                promise.resolved = true
+            elseif promise.questionData[1] == event then
+                promise.answerData = data
+                promise.resolved = true
+            else
+                allPromisesResolved = false
             end
         end
 
@@ -74,8 +72,13 @@ OSEventHandler = Class {
     findPromisesToResolve = function(self)
         local promisesToResolve = {}
         for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
-            if promise.kind == self.registeredOutcome then
-                table.insert(promisesToResolve, promise)
+            if not promise.resolved then
+                for _, kind in pairs(promise.kind) do
+                    if (kind == self.registeredOutcome) then
+                        table.insert(promisesToResolve, promise)
+                        break
+                    end
+                end
             end
         end
         return promisesToResolve

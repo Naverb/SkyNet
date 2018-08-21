@@ -85,12 +85,10 @@ local testTask2 = tasklib.Task:new {
             promisesToResolve = thisTask:findPromisesToResolve()
 
             for _,promise in pairs(promisesToResolve) do
-                if promise.kind == thisTask.registeredOutcome then
-                    promise.answerData = {
-                        exampleAnswer = 'Answered ' .. promise.questionData.exampleDatum
-                    }
-                    promise.resolved = true
-                end
+                promise.answerData = {
+                    exampleAnswer = 'Answered ' .. promise.questionData.exampleDatum
+                }
+                promise.resolved = true
             end
 
             print('Resolved the promises')
@@ -109,12 +107,10 @@ local testTask3 = tasklib.Task:new {
             promisesToResolve = thisTask:findPromisesToResolve()
 
             for _,promise in pairs(promisesToResolve) do
-                if promise.kind == thisTask.registeredOutcome then
-                    promise.answerData = {
-                        exampleAnswer = 'Also answered ' .. promise.questionData.exampleDatum
-                    }
-                    promise.resolved = true
-                end
+                promise.answerData = {
+                    exampleAnswer = 'Also answered ' .. promise.questionData.exampleDatum
+                }
+                promise.resolved = true
             end
 
             print('Resolved the promises')

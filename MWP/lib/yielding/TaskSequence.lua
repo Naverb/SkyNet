@@ -46,7 +46,12 @@ TaskSequence = Class {
     end,
 
     checkPromiseFulfillment = function(self, promise)
-        return self.registeredTasks[promise.kind] ~= nil
+        for _,kind in pairs(promise.kind) do
+            if self.registeredTasks[kind] ~= nil then
+                return true, kind
+            end
+        end
+        return false
     end,
 
     run = function(self)
@@ -64,9 +69,10 @@ TaskSequence = Class {
                     local ok, returnedData = nextYieldingObject:run()
                     if nextYieldingObject.requiredPromises then
                         for _, promise in pairs(nextYieldingObject.requiredPromises) do
-                            if self:checkPromiseFulfillment(promise) then
+                            local fulfillable, kind = self:checkPromiseFulfillment(promise)
+                            if fulfillable then
                                 if not self.resolvablePromises[promise.UID] then
-                                    self:queueTask(self.registeredTasks[promise.kind])
+                                    self:queueTask(self.registeredTasks[kind])
                                     self.resolvablePromises[promise.UID] = promise
                                 end
                             else

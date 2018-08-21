@@ -123,7 +123,7 @@ Task = Class {
                 local os_event = {returnedData[1]}
                 self.requiredPromises['os_pullEvent'] = self:requestPromise {
                     questionData = os_event,
-                    kind = 'os_pullEvent'
+                    kind = {os_event, 'os_pullEvent'}
                 }
                 self.isActive = false
             end
@@ -164,8 +164,13 @@ Task = Class {
     findPromisesToResolve = function(self)
         local promisesToResolve = {}
         for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
-            if promise.kind == self.registeredOutcome then
-                table.insert(promisesToResolve, promise)
+            if not promise.resolved then
+                for _, kind in pairs(promise.kind) do
+                    if (kind == self.registeredOutcome) then
+                        table.insert(promisesToResolve, promise)
+                        break
+                    end
+                end
             end
         end
         return promisesToResolve
