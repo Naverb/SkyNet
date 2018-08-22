@@ -18,7 +18,7 @@ local testTask1 = tasklib.Task:new {
 
         thisTask:yieldUntilResolved {promise}
 
-        if promise.resolved then
+        if promise:resolved() then
             print('Promise is resolved!')
         else
             print('Promise is NOT resolved!')
@@ -94,7 +94,7 @@ local testTask2 = tasklib.Task:new {
                 promise.answerData = {
                     exampleAnswer = 'Answered ' .. promise.questionData.exampleDatum
                 }
-                promise.resolved = true
+                promise:resolve()
             end
 
             print('Resolved the promises')
@@ -116,7 +116,7 @@ local testTask3 = tasklib.Task:new {
                 promise.answerData = {
                     exampleAnswer = 'Also answered ' .. promise.questionData.exampleDatum
                 }
-                promise.resolved = true
+                promise:resolve()
             end
 
             print('Resolved the promises')
@@ -126,7 +126,7 @@ local testTask3 = tasklib.Task:new {
     end
 }
 
-local test_os_task = tasklib.OSEventHandler:new()
+local test_os_task = tasklib.LegacyEventHandler:new()
 
 local testTaskSequence = tasklib.TaskSequence:new {
     name = 'TestTaskSequence'

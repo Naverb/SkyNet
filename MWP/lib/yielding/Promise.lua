@@ -33,11 +33,42 @@ Promise = Class {
 
     UID                 = EMPTY_PROPERTY,
     dataWasAccessed     = EMPTY_BOOL,
-    resolved            = EMPTY_BOOL,
+    status              = 1,
+    --[[
+        status = 1: Promise is not resolved, and no task is trying to resolve it.
+        status = 0: Promise is resolved.
+        status = -1: Promise is not resolved, and a task is trying to resolve it.
+    ]]
     answerData          = {},
     questionData        = {},
     askingTask          = EMPTY_PROPERTY,
-    kind                = EMPTY_PROPERTY
+    answeringTask       = EMPTY_PROPERTY,
+    kind                = EMPTY_PROPERTY,
+
+    reserved = function(self, context)
+        if (self.status <= 0) and (context ~= self.answeringTask) then
+            return true
+        else
+            return false
+        end
+    end,
+
+    resolved = function(self)
+        return self.status == 0
+    end,
+
+    resolve = function(self)
+        self.status = 0
+    end,
+
+    unResolve = function(self)
+        self.status = 1
+    end,
+
+    reserve = function(self,context)
+        self.status = -1
+        self.answeringTask = context or nil -- Will we always be within the context of a task's procedure when calling this?
+    end
 }
 
 _module = Promise

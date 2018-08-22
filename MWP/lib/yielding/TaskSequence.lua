@@ -3,10 +3,12 @@ local module = loadfile('/MWP/lib/module.lua')()
 local EMPTY_BOOL = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_BOOL
 local EMPTY_PROPERTY = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_PROPERTY
 local tableClone = module.require('/MWP/lib/notyourmomslua.lua').tableClone
+local generateUID = module.require('/MWP/lib/notyourmomslua.lua').generateUID
 
 local Class = module.require('/MWP/lib/class.lua')
 
 local YieldingInterface = module.require('/MWP/lib/yielding/YieldingInterface.lua')
+local Task = module.require('/MWP/lib/yielding/Task.lua')
 
 -- @CLASS TaskSequence @PARAMS {name}
 TaskSequence = Class {
@@ -84,8 +86,8 @@ TaskSequence = Class {
                     end
 
                     if not ok then
-                        print(returnedData[1]) -- If the task terminated with an error, this is the error message.
-                        print('Error running ' .. nextYieldingObject.name .. ' disabling.')
+                        print('Error running ' .. nextYieldingObject.name .. '; disabling. \n Error: ' .. textutils.serialise(returnedData))
+                        nextYieldingObject:unqueueFromTaskSequence()
                         nextYieldingObject:disable()
                     end
                 end
@@ -94,6 +96,21 @@ TaskSequence = Class {
         else
             return self:yield(true)
         end
+    end,
+
+    queueAction = function(self,func,...)
+        local args = {...}
+        local preppedFunc = function()
+            func(unpack(args)) -- Darn lua varargs
+            return thisTask:terminate()
+        end
+
+        local wrappingTask = Task:new {
+            name = 'WrappingTask-' .. generateUID(),
+            procedure = preppedFunc
+        }
+
+        self:queueTask(wrappingTask)
     end,
 
     enable = function(self)

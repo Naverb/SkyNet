@@ -69,7 +69,7 @@ Task = Class {
 
     terminate = function(self, finalData)
         self.isActive = false
-        self.enclosingTaskSequence:unqueueTask(self)
+        self:unqueueFromTaskSequence()
         return true, finalData
     end,
 
@@ -81,7 +81,7 @@ Task = Class {
                 -- Check if all promises are resolved.
                 local allPromisesResolved = true
                 for _,promise in pairs(self.requiredPromises) do
-                    if not promise.resolved then
+                    if not promise:resolved() then
                         allPromisesResolved = false
                         break
                     end
@@ -94,24 +94,32 @@ Task = Class {
                 end
             end
 
-            if not self.requiredPromises['os_pullEvent'] then
+            local returnedData
+
+            if not self.requiredPromises['legacy_event'] then
                 -- This code is run if the task last yielded by calling self:yield()
                 returnedData = {coroutine.resume(self.action)}
             else
                 -- This code is run if the task last yielded by calling coroutine.yield.
-                os_event_promise = self.requiredPromises['os_pullEvent'] -- The os_event_promise handles situations where the task calls coroutine.yield() without calling self:yield(). I.e. when rednet yields or gps... etc...
-                if os_event_promise.resolved then
-                    os_event_promise.dataWasAccessed = true
-                    returnedData = {coroutine.resume(self.action, unpack(os_event_promise.answerData))}
+                legacy_event_promise = self.requiredPromises['legacy_event'] -- The os_event_promise handles situations where the task calls coroutine.yield() without calling self:yield(). I.e. when rednet yields or gps... etc...
+                if legacy_event_promise:resolved() then
+                    legacy_event_promise.dataWasAccessed = true
+                    returnedData = {coroutine.resume(self.action, unpack(legacy_event_promise.answerData))}
                 else
-                    -- Our os_pullEvent promise wasn't fullfilled
+                    -- Our legacy_event promise wasn't fullfilled
                     self.isActive = false
                     returnedData = {true, nil}
                 end
             end
 
+
             local ok = returnedData[1]
             table.remove(returnedData, 1)
+
+            if not ok then
+                self.isActive = false
+                return ok, returnedData
+            end
 
             self:cleanupRequiredPromises()
 
@@ -120,10 +128,11 @@ Task = Class {
                 -- task likely did not call self:yield(). Hence, we presume the
                 -- task called coroutine.yield(), and we wrap the event of the
                 -- coroutine into a promise to interface with the task API.
-                local os_event = {returnedData[1]}
-                self.requiredPromises['os_pullEvent'] = self:requestPromise {
-                    questionData = os_event,
-                    kind = {os_event, 'os_pullEvent'}
+                local legacy_event = returnedData[1]
+                table.remove(returnedData,1)
+                self.requiredPromises['legacy_event'] = self:requestPromise {
+                    questionData = returnedData,
+                    kind = {legacy_event, 'legacy_event'}
                 }
                 self.isActive = false
             end
@@ -164,7 +173,7 @@ Task = Class {
     findPromisesToResolve = function(self)
         local promisesToResolve = {}
         for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
-            if not promise.resolved then
+            if not promise:resolved() then
                 for _, kind in pairs(promise.kind) do
                     if (kind == self.registeredOutcome) then
                         table.insert(promisesToResolve, promise)

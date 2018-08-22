@@ -48,7 +48,7 @@ local function traverseTrajectory(trajectory, breakBlocks)
 
     -- Move in x first
     if (dx ~= 0) then
-        orientTurtle(I:mul(sign_x), true)
+        gps2.orientTurtle(I:mul(sign_x), true)
         for i = 1,math.abs(dx) do
             if not forward() then
                 if breakBlocks then
@@ -61,7 +61,7 @@ local function traverseTrajectory(trajectory, breakBlocks)
 
     -- Move in z now
     if (dz ~= 0) then
-        orientTurtle(K:mul(sign_z), true)
+        gps2.orientTurtle(K:mul(sign_z), true)
         for i = 1,math.abs(dz) do
             if not forward() then
                 if breakBlocks then
@@ -116,19 +116,6 @@ function goTo(destination, _breakBlocks, _tolerance)
     -- FIX ME until trajectory:round():length() < tolerance
 end
 
-moveTask = {}
-function moveTask:new(destination, arg)
-    local name = arg.name or 'untitled_move_task'
-    local breakBlocks = arg.breakBlocks or false
-    local tolerance = arg.tolerance or 1
-
-    local moveFunction = function()
-        goTo(destination, breakBlocks, tolerance)
-    end
-
-    return task2.task:new(name, nil, moveFunction)
-end
-
 ------------------------------------------------------
 -------------- ENVIROMENTAL ORIENTATION --------------
 
@@ -142,22 +129,5 @@ function orientChunk()
         return loc.y
     else
         print("Error in Location")
-    end
-end
-
-orientChunkTask = {}
-function orientChunkTask:new()
-    local err, loc = gps2.getLocation()
-    local dest
-    if not err then
-        dest = vector.new(loc.x - loc.x % 16,
-                          loc.y,
-                          lox.z - loc.z % 16)
-        return moveTask:new(dest, {
-            name = 'orient_chunk_task',
-            breakBlocks = true
-        })
-    else
-        print('Error getting location for orientChunkTask constructor.')
     end
 end

@@ -6,15 +6,15 @@ local Class = module.require('/MWP/lib/class.lua')
 
 local YieldingInterface = module.require('/MWP/lib/yielding/YieldingInterface.lua')
 
--- @CLASS OSEventHandler @PARAMS {name}
-OSEventHandler = Class {
+-- @CLASS LegacyEventHandler @PARAMS {name}
+LegacyEventHandler = Class {
     implements = YieldingInterface,
 
     constructor = function(self)
         local obj = {}
 
-        obj.name 				= 'OSEventHandler'
-        obj.registeredOutcome 	= 'os_pullEvent'
+        obj.name 				= 'LegacyEventHandler'
+        obj.registeredOutcome 	= 'legacy_event'
         obj.enabled 			= true
 
         return obj
@@ -51,12 +51,12 @@ OSEventHandler = Class {
 
         local allPromisesResolved = true
         for _,promise in pairs(promisesToResolve) do
-            if not promise.questionData[1] then
+            if not promise.kind[1] then -- The first entry in promise.kind is the event called by os.pullEvent.
                 promise.answerData = data
-                promise.resolved = true
-            elseif promise.questionData[1] == event then
+                promise:resolve()
+            elseif promise.kind[1] == event then
                 promise.answerData = data
-                promise.resolved = true
+                promise:resolve()
             else
                 allPromisesResolved = false
             end
@@ -72,7 +72,7 @@ OSEventHandler = Class {
     findPromisesToResolve = function(self)
         local promisesToResolve = {}
         for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
-            if not promise.resolved then
+            if not promise:reserved() then
                 for _, kind in pairs(promise.kind) do
                     if (kind == self.registeredOutcome) then
                         table.insert(promisesToResolve, promise)
@@ -93,4 +93,4 @@ OSEventHandler = Class {
     end
 }
 
-_module = OSEventHandler
+_module = LegacyEventHandler
