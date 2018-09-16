@@ -1,0 +1,37 @@
+function test_env()
+    while true do
+        if not global_potato then
+            print("Couldn't find global_potato!")
+        else
+            print(global_potato)
+            global_potato = 'wowsers'
+        end
+        if not tab then
+            print('Where is Carmen Sandiego?')
+        else
+            print(tab.wow)
+            tab.wow = 'Carmen Sandiego'
+        end
+        coroutine.yield()
+    end
+end
+test_coroutine = coroutine.create(test_env)
+
+local kiwiTab = {
+    wow = 'Owen Wilson'
+}
+
+print('1')
+coroutine.resume(test_coroutine)
+print('2')
+coroutine_mt = { __index = _G }
+coroutine_env = {global_potato = 'yee', tab = kiwiTab}
+setmetatable(coroutine_env, coroutine_mt)
+setfenv(test_env, coroutine_env)
+coroutine.resume(test_coroutine)
+print('3')
+woah = coroutine.create(test_env)
+--coroutine_env['global_potato'] = 'nope'
+coroutine.resume(woah)
+print('4')
+print(kiwiTab.wow)

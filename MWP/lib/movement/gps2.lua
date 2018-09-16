@@ -1,12 +1,7 @@
--- APIS
-    os.loadAPI('SkyNet/MWP/lib/task')
-
 -- Standard Vectors
-    local I = vector.new(1,0,0)
-    local J = vector.new(0,1,0)
-    local K = vector.new(0,0,1)
-
-
+local I = vector.new(1,0,0)
+local J = vector.new(0,1,0)
+local K = vector.new(0,0,1)
 
 ------------------------------------------------------
 ------------------ GET GPS INFO ----------------------
@@ -16,7 +11,7 @@ function getLocation()
     -- We note that gps.locate is based on the rednet API, which runs coroutine.yield.
     --  Hence, we tell the system to run this line without yielding (see task.noYield),
     --  because we do not want to yield all of getLocation() in the middle of a task.
-    local loc = vector.new(task.noYield(gps.locate)(5))
+    local loc = vector.new(gps.locate(5))  --task.noYield(gps.locate)(5))
     if not loc then
         return true, nil
         -- We return error = true and loc = nil
@@ -25,9 +20,8 @@ function getLocation()
     end
 end
 
-
 function getOrientation(localMode)
-    -- Get orientation of turtle (if localMode, 
+    -- Get orientation of turtle (if localMode,
     -- then use the turtle's stored direction)
     if not turtle then
         return nil
@@ -38,8 +32,7 @@ function getOrientation(localMode)
 
         -- We yield here because non-local getOrientation requires fuel, so yielding allows a taskHandler
         -- to pass execution to a fuel checker listener if we want to.
-        coroutine.yield('check_fuel')
-
+        --coroutine.yield('sufficient_fuel')
         local err, loc1 = getLocation()
         -- Now we'll move the turtle
 
@@ -94,8 +87,13 @@ function getOrientation(localMode)
 end
 
 -- Set the initial value of the local_orientation vector
+<<<<<<< HEAD:MWP/lib/movement/gps2
 local_orientation = getOrientation(false)
 
+=======
+print('Getting orientation')
+local_orientation = getOrientation(false)
+>>>>>>> testing:MWP/lib/movement/gps2.lua
 
 function getTrajectory(dest)
     -- Calculate the vector trajectory between destination from current location
@@ -107,8 +105,6 @@ function getTrajectory(dest)
         -- Don't send displacement if there is an error
     end
 end
-
-
 
 ------------------------------------------------------
 ----------------- ORIENT TURTLE ----------------------
@@ -140,6 +136,3 @@ function orientTurtle(direction, localMode)
         local_orientation = direction
     end
 end
-
-
-

@@ -1,0 +1,49 @@
+-- APIS
+print('##########################')
+print('Loading task library')
+os.loadAPI('SkyNet/MWP/lib/task2')
+print('Loading gps2 library')
+os.loadAPI("SkyNet/MWP/lib/movement/gps2")
+print('Loading move library')
+os.loadAPI('SkyNet/MWP/lib/movement/move')
+print('Loading waypoint library')
+os.loadAPI("SkyNet/MWP/lib/movement/waypoint")
+print('Loading act library')
+os.loadAPI('SkyNet/MWP/lib/act')
+print('##########################')
+
+function printTable(t)
+    print('Printing ' .. tostring(t)) 
+    for k,val in pairs(t) do
+        print(k)
+    end
+end
+
+
+corner1 = vector.new(-114,91,359)
+corner2 = vector.new(-178,91,359)
+corner3 = vector.new(-178,91,427)
+corner4 = vector.new(-114,91,423)
+
+home = vector.new(-119,95,366)
+
+wp = waypoint.waypointTask:new('Home', home)
+
+tS = task2.taskSequence:new('main_sequence')
+
+print('==========')
+print(wp.name)
+print(wp.resumeEvent)
+
+
+
+tS:queueTask(wp)
+tS:createAllTasksCoroutine()
+print(tS.allTasks_co)
+print(tS:dispatch{ dispatchAll = true })
+print(wp.resumeEvent)
+--[[
+while true do
+
+    tS:dispatch{dispatchAll = true}
+end]]

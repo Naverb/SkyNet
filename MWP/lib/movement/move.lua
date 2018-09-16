@@ -1,5 +1,11 @@
--- APIS
-    os.loadAPI('SkyNet/MWP/lib/movement/gps2')
+local module = loadfile('/MWP/lib/module.lua')()
+local gps2 = module.require('/MWP/lib/movement/gps2.lua')
+
+-- Standard Vectors
+local I = vector.new(1,0,0)
+local J = vector.new(0,1,0)
+local K = vector.new(0,0,1)
+
 
 ------------------------------------------------------
 ----------------- HELPER FUNCTIONS -------------------
@@ -10,17 +16,17 @@
 --      moving a single block. That way, we can deal with event interrupts, etc..
 
 forward = function ()
-    coroutine.yield('turtle_move_forward')
+    --coroutine.yield('sufficient_fuel')
     return turtle.forward()
 end
 
 up = function ()
-    coroutine.yield('turtle_move_up')
+    --coroutine.yield('sufficient_fuel')
     return turtle.up()
 end
 
 down = function ()
-    coroutine.yield('turtle_move_down')
+    --coroutine.yield('sufficient_fuel')
     return turtle.down()
 end
 
@@ -42,7 +48,7 @@ local function traverseTrajectory(trajectory, breakBlocks)
 
     -- Move in x first
     if (dx ~= 0) then
-        orientTurtle(I:mul(sign_x), true)
+        gps2.orientTurtle(I:mul(sign_x), true)
         for i = 1,math.abs(dx) do
             if not forward() then
                 if breakBlocks then
@@ -55,12 +61,12 @@ local function traverseTrajectory(trajectory, breakBlocks)
 
     -- Move in z now
     if (dz ~= 0) then
-        orientTurtle(K:mul(sign_z), true)
+        gps2.orientTurtle(K:mul(sign_z), true)
         for i = 1,math.abs(dz) do
             if not forward() then
                 if breakBlocks then
-                    turtle.dig()                -- FIXME? COROUTINE? 
-                    forward()                       -- turtle.dig() should not call a coroutine.yield() because it does not use any fuel.
+                    turtle.dig()
+                    forward()
                 end
             end
         end
@@ -71,7 +77,7 @@ local function traverseTrajectory(trajectory, breakBlocks)
         for i = 1,math.abs(dy) do
             if not up() then
                 if breakBlocks then
-                    turtle.digUp()              -- FIXME? COROUTINE?
+                    turtle.digUp()
                     up()
                 end
             end
@@ -107,8 +113,6 @@ function goTo(destination, _breakBlocks, _tolerance)
         end
 
     until trajectory:length() < tolerance
-    -- Hopefully this grabs scope from the local variable inside
-
     -- FIX ME until trajectory:round():length() < tolerance
 end
 
