@@ -3,7 +3,11 @@ function tableClone(tbl)
 
     if type(tbl) == 'table' then
         for k,v in pairs(tbl) do
-            newTbl[k] = v
+            if type(v) == 'table' then
+                newTbl[k] = tableClone(v)
+            else
+                newTbl[k] = v
+            end
         end
     else
         print('Attempted to clone empty table!')

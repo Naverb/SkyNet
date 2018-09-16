@@ -173,7 +173,7 @@ Task = Class {
     findPromisesToResolve = function(self)
         local promisesToResolve = {}
         for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
-            if not promise:resolved() then
+            if not (promise:resolved() or promise:reserved(self.name)) then -- Should this be resolved or reserved?
                 for _, kind in pairs(promise.kind) do
                     if (kind == self.registeredOutcome) then
                         table.insert(promisesToResolve, promise)

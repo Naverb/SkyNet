@@ -1,6 +1,5 @@
 --[[
     A module loading system for computercraft that is loosely based on Node.JS's module.js
-    (C) Anthony D'Arienzo
 ]]
 
 module_cache = module_cache or {} -- This module_cache appears to persist across program runs. Perhaps we want to clear this on boot?

@@ -72,7 +72,7 @@ LegacyEventHandler = Class {
     findPromisesToResolve = function(self)
         local promisesToResolve = {}
         for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
-            if not promise:reserved() then
+            if not promise:reserved(self.name) then -- We need self.name to pass a context to reserve(), right?
                 for _, kind in pairs(promise.kind) do
                     if (kind == self.registeredOutcome) then
                         table.insert(promisesToResolve, promise)

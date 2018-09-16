@@ -11,9 +11,11 @@ PathSupervisor = Class {
             registeredOutcome = 'path_yield',
             procedure = self.PathSupervisorProcedure,
             condition = params.condition,
-
-            fuelingStation = params.fuelingStation or nil
         }
+
+        if params.fuelingStation then
+            obj.fuelingStation = params.fuelingStation
+        end
 
         return obj
     end,
