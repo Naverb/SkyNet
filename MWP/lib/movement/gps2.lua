@@ -87,13 +87,8 @@ function getOrientation(localMode)
 end
 
 -- Set the initial value of the local_orientation vector
-<<<<<<< HEAD:MWP/lib/movement/gps2
-local_orientation = getOrientation(false)
-
-=======
 print('Getting orientation')
 local_orientation = getOrientation(false)
->>>>>>> testing:MWP/lib/movement/gps2.lua
 
 function getTrajectory(dest)
     -- Calculate the vector trajectory between destination from current location
