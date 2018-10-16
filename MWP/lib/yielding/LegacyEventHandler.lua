@@ -1,9 +1,5 @@
-local module = loadfile('/MWP/lib/module.lua')()
-local EMPTY_BOOL = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_BOOL
-local EMPTY_PROPERTY = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_PROPERTY
-
-local Class = module.require('/MWP/lib/class.lua')
-
+local EMPTY_BOOL = nym.EMPTY_BOOL
+local EMPTY_PROPERTY = nym.EMPTY_PROPERTY
 local YieldingInterface = module.require('/MWP/lib/yielding/YieldingInterface.lua')
 
 -- @CLASS LegacyEventHandler @PARAMS {name}
