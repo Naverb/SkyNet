@@ -1,6 +1,3 @@
-local module = loadfile('/MWP/lib/module.lua')()
-local Class = module.require('/MWP/lib/class.lua')
-
 Path = Class {
     constructor = function(self, name, waypoints)
         local obj = {

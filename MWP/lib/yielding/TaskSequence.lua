@@ -1,11 +1,7 @@
-local module = loadfile('/MWP/lib/module.lua')()
-
-local EMPTY_BOOL = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_BOOL
-local EMPTY_PROPERTY = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_PROPERTY
-local tableClone = module.require('/MWP/lib/notyourmomslua.lua').tableClone
-local generateUID = module.require('/MWP/lib/notyourmomslua.lua').generateUID
-
-local Class = module.require('/MWP/lib/class.lua')
+local EMPTY_BOOL = nym.EMPTY_BOOL
+local EMPTY_PROPERTY = nym.EMPTY_PROPERTY
+local tableClone = nym.tableClone
+local generateUID = nym.generateUID
 
 local YieldingInterface = module.require('/MWP/lib/yielding/YieldingInterface.lua')
 local Task = module.require('/MWP/lib/yielding/Task.lua')
@@ -145,8 +141,7 @@ TaskSequence = Class {
         if #self.tasksToRun <= 0 then
             self.tasksToRun = tableClone(self.pendingTasks)
             return true, nil -- We don't have a new yielding object to run until the enclosingTaskSequence queues this again.
-
-            else
+        else
             local nextYieldingObject = self.tasksToRun[1]
             table.remove(self.tasksToRun, 1)
             return false, nextYieldingObject

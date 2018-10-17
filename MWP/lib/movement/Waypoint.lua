@@ -1,5 +1,3 @@
-local module = loadfile('/MWP/lib/module.lua')()
-local Class = module.require('/MWP/lib/class.lua')
 local gps2 = module.require('/MWP/lib/movement/gps2.lua')
 local move = module.require('/MWP/lib/movement/move.lua')
 
