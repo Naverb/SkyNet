@@ -44,14 +44,15 @@ function require(file)
         -- The file exists, let's load it.
         local module = {}
         local module_env = {}
-        setmetatable(module_env, { __index = _G })
+
+        setmetatable(module_env, { __index = getfenv() })
 
         local module_func, err_loadfile = loadfile(file, module_env)
 
         local ok, err_pcall = pcall( module_func )
 
         if not ok then
-            error('Error loading module:  \n -->' .. 'Module: ' .. file .. '\n -->' .. tostring(err_loadfile) .. '\n -->' .. tostring(err_pcall),0)
+            error('Error loading module:  \n> Module: ' .. file .. '\n> Loadfile: ' .. tostring(err_loadfile) .. '\n> Init: ' .. tostring(err_pcall),0)
         else
 
             if module_env._module then
@@ -172,6 +173,13 @@ function require(file)
     else
         return data
     end
+end
+
+if IS_LOADER then
+    print('> Skynet loader detected. Modifying module.require environment.')
+    setfenv(require, getfenv(1)) -- Layer 1 is the calling function (the skynet loader).
+else
+    print('No skynet loader detected.')
 end
 
 return {

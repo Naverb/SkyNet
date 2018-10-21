@@ -32,6 +32,17 @@ function generateUID()
 	return string.format("%09d", s1)..string.format("%09d", s2)..string.format("%09d", s3)..string.format("%09d", s4)
 end
 
+function run(filepath,...)
+    -- Runs a lua file at filepath and returns either the return statement or
+    -- any error encountered during execution. When filepath is executed the
+    -- current function environment is set as the global function environment
+    -- for the script. This ensures that the script has access to all global
+    -- variables.
+    local exec = loadfile(filepath)
+    setfenv(exec, getfenv())
+    return pcall(exec,...)
+end
+
 -- SOME HELPER STUFF --
 EMPTY_PROPERTY 	= '__empty__'
 EMPTY_BOOL 		= false

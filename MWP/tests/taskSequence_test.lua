@@ -1,8 +1,9 @@
-local module = loadfile('/MWP/lib/module.lua')()
-module.clear_module_cache()
+print('Advancing to module loading...')
 local tasklib = module.require('/MWP/lib/yielding')
+print('Loading the movement library now')
 local movelib = module.require('/MWP/lib/movement')
 
+print('Creating tasks...')
 local testTask1 = tasklib.Task:new {
     name = 'Test1',
     procedure = function()
@@ -126,6 +127,7 @@ local testTask3 = tasklib.Task:new {
     end
 }
 
+print('Generating the legacy event handler now')
 local test_os_task = tasklib.LegacyEventHandler:new()
 
 local testTaskSequence = tasklib.TaskSequence:new {
@@ -136,6 +138,7 @@ local otherTaskSequence = tasklib.TaskSequence:new {
     name = 'OtherTaskSequence'
 }
 
+print('Registering to taskSequences...')
 testTask2:registerToTaskSequence(testTaskSequence)
 testTaskSequence:registerToRegisteredTasks(testTask2)
 otherTaskSequence:registerToRegisteredTasks(test_os_task)
@@ -145,6 +148,7 @@ testTaskSequence:queueTask(testTask1)
 
 otherTaskSequence:queueTask(testTaskSequence)
 
+print('Preparing to run')
 repeat
     status = otherTaskSequence:run()
 until not otherTaskSequence.enabled

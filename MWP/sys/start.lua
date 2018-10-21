@@ -11,14 +11,21 @@
     23 August 2018
 --]]
 
+-- This variable is used by some files to determine whether the system is
+-- running through start.lua or through some other means.
+IS_LOADER = true
 
 -- ===================== MODULE.LUA =====================
 -- ============== /MWP/lib/core/module.lua ==============
 
 -- Load the module library:
-module = loadfile('/MWP/lib/core/module.lua')()
+local module_loader = loadfile('/MWP/lib/core/module.lua')
+setfenv(module_loader, getfenv())
+ok, module = pcall(module_loader)
+if not ok then print(module) else print('Module API loaded successfully.') end
+
 -- Clear loaded libraries:
-module.clear_cache()
+module.clear_module_cache()
 
 -- ================= NOTYOURMOMSLUA.LUA =================
 -- ========== /MWP/lib/core/notyourmomslua.lua ==========
@@ -39,4 +46,6 @@ pst = module.require('/MWP/lib/core/persistence.lua')
 -- ================= /MWP/sys/skynetrc ===================
 -- All files specified in skynetrc will be executed here after all critical
 -- libraries have been loaded.
-loadfile('/MWP/sys/skynetrc.lua')()
+
+ok, result = nym.run('/MWP/sys/skynetrc.lua')
+if not ok then error(result) end

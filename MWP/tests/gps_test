@@ -1,3 +1,0 @@
-os.loadAPI('SkyNet/MWP/lib/gps2')
-
-gps2.getOrientation()

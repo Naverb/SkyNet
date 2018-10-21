@@ -8,7 +8,6 @@ local Promise = module.require('/MWP/lib/yielding/Promise.lua')
 Task = Class {
     implements = YieldingInterface,
     constructor = function(self, params)
-
         local obj = {}
         obj.enabled = true
         obj.name = assert(params.name, "Attempted to create a task without specifying a name!")

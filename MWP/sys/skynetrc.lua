@@ -1,11 +1,16 @@
 local filesToExec = {
     -- Put files to execute in this array.
-    '/MWP/sys/hello.lua'
+    '/MWP/sys/hello.lua',
+    '/MWP/tests/taskSequence_test.lua'
 }
 
 for _,filepath in ipairs(filesToExec) do
-    print('Executing ' .. tostring(filepath))
+    print('> Executing ' .. tostring(filepath))
     local exec = loadfile(filepath)
-    local result = pcall(exec)
-    print('Finished executing ' .. filepath .. '. System returned ' .. tostring(result) .. '.')
+    setfenv(exec, getfenv())
+    local ok, result = pcall(exec)
+    if not ok then
+        print(filepath .. ' failed to load properly.')
+        error(result)
+    end
 end
