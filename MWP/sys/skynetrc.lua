@@ -1,7 +1,7 @@
 local filesToExec = {
     -- Put files to execute in this array.
     '/MWP/sys/hello.lua',
-    '/MWP/tests/taskSequence_test.lua'
+    '/MWP/tests/path_test.lua'
 }
 
 for _,filepath in ipairs(filesToExec) do

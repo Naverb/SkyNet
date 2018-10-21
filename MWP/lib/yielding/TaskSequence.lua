@@ -53,12 +53,10 @@ TaskSequence = Class {
     end,
 
     run = function(self)
-
         if self.enabled then
             self.isActive = true
             self:cleanupResolvablePromises()
             self:cleanupRequiredPromises()
-
             repeat
                 local noYieldingObjectsLeft, nextYieldingObject = self:getNextYieldingObject()
                 if not nextYieldingObject then
@@ -139,7 +137,10 @@ TaskSequence = Class {
             end
         end
         if #self.tasksToRun <= 0 then
-            self.tasksToRun = tableClone(self.pendingTasks)
+            for k,v in pairs(self.pendingTasks) do
+                self.tasksToRun[k] = v
+            end
+            --self.tasksToRun = tableClone(self.pendingTasks)
             return true, nil -- We don't have a new yielding object to run until the enclosingTaskSequence queues this again.
         else
             local nextYieldingObject = self.tasksToRun[1]
