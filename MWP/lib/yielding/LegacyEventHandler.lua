@@ -17,15 +17,10 @@ LegacyEventHandler = Class {
     end,
 
     isActive                = EMPTY_BOOL,
-    enclosingTaskSequence   = {},
     name 	                = EMPTY_PROPERTY,
     index               	= EMPTY_PROPERTY,
     enabled                 = EMPTY_BOOL,
     requiredPromises        = {}, -- We do not need required promises, but we want to interface with YieldingInterface.
-
-    registerToTaskSequence = function(self, taskSequence)
-        self.enclosingTaskSequence = taskSequence
-    end,
 
     yield = function(self)
         self.isActive = false
@@ -65,10 +60,10 @@ LegacyEventHandler = Class {
         end
     end,
 
-    findPromisesToResolve = function(self)
+    assignResolvablePromises = function(self, taskSequence)
         local promisesToResolve = {}
-        for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
-            if not promise:reserved(self.name) then -- We need self.name to pass a context to reserve(), right?
+        for _,promise in pairs(taskSequence.resolvablePromises) do
+            if not (promise:resolved() or promise:reserved(self.name)) then
                 for _, kind in pairs(promise.kind) do
                     if (kind == self.registeredOutcome) then
                         table.insert(promisesToResolve, promise)
@@ -77,7 +72,12 @@ LegacyEventHandler = Class {
                 end
             end
         end
-        return promisesToResolve
+        self.promisesToResolve = promisesToResolve
+    end,
+
+    findPromisesToResolve = function(self)
+        -- This is just here for legacy compatibility
+        return self.promisesToResolve
     end,
 
     disable = function(self)

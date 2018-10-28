@@ -5,11 +5,9 @@ local EMPTY_PROPERTY = nym.EMPTY_PROPERTY
 YieldingInterface = {
     isActive 				= EMPTY_BOOL,
     enabled 				= EMPTY_BOOL,
-    enclosingTaskSequence 	= {},
     requiredPromises 		= {},
     name 					= EMPTY_PROPERTY,
 
-    registerToTaskSequence  = function() end,
     enable                  = function() end,
     disable                 = function() end,
     run                     = function() end

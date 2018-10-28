@@ -21,7 +21,6 @@ TaskSequence = Class {
 
     isActive               = EMPTY_BOOL,
     enabled                = EMPTY_BOOL,
-    enclosingTaskSequence  = {},
     pendingTasks           = {},
     registeredTasks        = {},
     tasksToRun             = {},
@@ -33,14 +32,6 @@ TaskSequence = Class {
     yield = function(self, ...)
         self.isActive = false
         return ...
-    end,
-
-    registerToTaskSequence = function(self, taskSequence)
-        self.enclosingTaskSequence = taskSequence
-    end,
-
-    registerToRegisteredTasks = function(self,task)
-        self.registeredTasks[task.registeredOutcome] = task
     end,
 
     checkPromiseFulfillment = function(self, promise)
@@ -62,6 +53,11 @@ TaskSequence = Class {
                 if not nextYieldingObject then
                     return self:yield(true) -- This boolean will be passed to "ok" in the enclosingTaskSequence. Do we want that? Perhaps we should return two values: one for "ok" and another to deterined whether this taskSequence was enabled or disabled.
                 else
+                    --[[
+                        Here we should write code that assignz the promises that the Task can fulfill. That way we can remove doubly linked lists.
+                    ]]
+                    nextYieldingObject:assignResolvablePromises(self)
+
                     local ok, returnedData = nextYieldingObject:run()
                     if nextYieldingObject.requiredPromises then
                         for _, promise in pairs(nextYieldingObject.requiredPromises) do
@@ -115,13 +111,17 @@ TaskSequence = Class {
         self.enabled = false
     end,
 
-    queueTask = function(self, task)
+    register = function (self,task)
+        self.registeredTasks[task.registeredOutcome] = task
+    end,
+
+    queue = function(self, task)
         table.insert(self.pendingTasks, task)
         task.enclosingTaskSequence = self
         task.index = #self.pendingTasks
     end,
 
-    unqueueTask = function(self, task)
+    unqueue = function(self, task)
         table.remove(self.pendingTasks, task.index)
         task.index = nil
     end,
