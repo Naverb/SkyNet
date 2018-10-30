@@ -29,19 +29,17 @@ LegacyEventHandler = Class {
 
     terminate = function(self)
         self.isActive = false
-        self.enclosingTaskSequence:unqueueTask(self)
-        return true
+        return true, {__unqueue = true} -- This last flag tells the enclosing TaskSequence to terminate this task.
     end,
 
     run = function(self)
         self.isActive = true
-        local promisesToResolve = self:findPromisesToResolve()
 
         local data = {os.pullEventRaw()}
         local event = data[1]
 
         local allPromisesResolved = true
-        for _,promise in pairs(promisesToResolve) do
+        for _,promise in pairs(self.promisesToResolve) do
             if not promise.kind[1] then -- The first entry in promise.kind is the event called by os.pullEvent.
                 promise.answerData = data
                 promise:resolve()
@@ -73,11 +71,6 @@ LegacyEventHandler = Class {
             end
         end
         self.promisesToResolve = promisesToResolve
-    end,
-
-    findPromisesToResolve = function(self)
-        -- This is just here for legacy compatibility
-        return self.promisesToResolve
     end,
 
     disable = function(self)

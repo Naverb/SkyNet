@@ -44,20 +44,23 @@ Task = Class {
         end
     end,
 
-    yield = function(self, requiredPromises)
+    yield = function(self, requiredPromises, unqueue)
         self.isActive = false
         self.requiredPromises = requiredPromises or {}
+        if unqueue then
+            return true, coroutine.yield({__unqueue = true})
+        end
         return true, coroutine.yield()
     end,
 
-    yieldUntilResolved = function(self, requiredPromises)
+    yieldUntilResolved = function(self, requiredPromises,unqueue)
         self.patient = true
-        return self:yield(requiredPromises)
+        return self:yield(requiredPromises,unqueue)
     end,
 
     terminate = function(self, finalData)
         self.isActive = false
-        self:unqueueFromTaskSequence()
+        finalData.__unqueue = true
         return true, finalData
     end,
 
@@ -138,7 +141,7 @@ Task = Class {
 
     requestPromise = function(self, attributes)
         local promise = Promise:new{
-            askingTask = self,
+            askingTask = self.name,
             questionData = attributes.questionData,
             kind = assert(attributes.kind, self.name .. " attempted to requestPromise without specifying kind")
         }

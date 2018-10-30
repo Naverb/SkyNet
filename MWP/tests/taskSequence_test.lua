@@ -99,8 +99,7 @@ local testTask2 = tasklib.Task:new {
             end
 
             print('Resolved the promises')
-            thisTask:unqueueFromTaskSequence()
-            thisTask:yield()
+            thisTask:yield(nil, true) -- No requied promises, but we want to unqueue this Task.
         end
     end
 }
@@ -121,8 +120,7 @@ local testTask3 = tasklib.Task:new {
             end
 
             print('Resolved the promises')
-            thisTask:unqueueFromTaskSequence()
-            thisTask:yield()
+            thisTask:yield(nil, true)
         end
     end
 }
@@ -139,14 +137,13 @@ local otherTaskSequence = tasklib.TaskSequence:new {
 }
 
 print('Registering to taskSequences...')
-testTask2:registerToTaskSequence(testTaskSequence)
-testTaskSequence:registerToRegisteredTasks(testTask2)
-otherTaskSequence:registerToRegisteredTasks(test_os_task)
-otherTaskSequence:registerToRegisteredTasks(testTask3)
 
-testTaskSequence:queueTask(testTask1)
+testTaskSequence:register(testTask2)
+otherTaskSequence:register(test_os_task)
+otherTaskSequence:register(testTask3)
 
-otherTaskSequence:queueTask(testTaskSequence)
+testTaskSequence:queue(testTask1)
+otherTaskSequence:queue(testTaskSequence)
 
 print('Preparing to run')
 repeat

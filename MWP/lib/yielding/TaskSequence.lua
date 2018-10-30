@@ -77,14 +77,18 @@ TaskSequence = Class {
 
                     if not ok then
                         print('Error running ' .. nextYieldingObject.name .. '; disabling. \n Error: ' .. textutils.serialise(returnedData))
-                        nextYieldingObject:unqueueFromTaskSequence()
+                        self:unqueue(nextYieldingObject)
                         nextYieldingObject:disable()
+                    elseif returnedData.__unqueue then
+                        self:unqueue(nextYieldingObject)
                     end
+
                 end
             until noYieldingObjectsLeft
             return self:yield(true)
         else
-            return self:yield(true)
+            -- Here we terminate the taskSequence from the enclosing taskSequence by returning a flag.
+            return self:yield({__unqueue = true})
         end
     end,
 
@@ -100,7 +104,7 @@ TaskSequence = Class {
             procedure = preppedFunc
         }
 
-        self:queueTask(wrappingTask)
+        self:queue(wrappingTask)
     end,
 
     enable = function(self)
@@ -117,7 +121,6 @@ TaskSequence = Class {
 
     queue = function(self, task)
         table.insert(self.pendingTasks, task)
-        task.enclosingTaskSequence = self
         task.index = #self.pendingTasks
     end,
 
@@ -128,13 +131,7 @@ TaskSequence = Class {
 
     getNextYieldingObject = function(self)
         if #self.pendingTasks < 1 then
-            if self.enclosingTaskSequence.name then -- We check if the enclosing task sequence is actually an instantiated TaskSequence.
-                self.enclosingTaskSequence:unqueueTask(self)
-            else
-                -- This TaskSequence does not have an enclosing TaskSequence, so
-                -- we disable self in order to terminate the program.
-                self:disable()
-            end
+            self:disable()
         end
         if #self.tasksToRun <= 0 then
             for k,v in pairs(self.pendingTasks) do

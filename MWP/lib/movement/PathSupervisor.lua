@@ -57,7 +57,7 @@ PathSupervisor = Class {
             end
 
             if allPromisesResolved then
-                thisTask:unqueueFromTaskSequence()
+                return thisTask:terminate()
             end
 
             thisTask:yield()

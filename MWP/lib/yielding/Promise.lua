@@ -38,8 +38,8 @@ Promise = Class {
     ]]
     answerData          = {},
     questionData        = {},
-    askingTask          = EMPTY_PROPERTY,
-    answeringTask       = EMPTY_PROPERTY,
+    askingTask          = EMPTY_PROPERTY, --This is the name of the Task that asked this promise.
+    answeringTask       = EMPTY_PROPERTY, -- This is the name of the answering Task
     kind                = EMPTY_PROPERTY,
 
     reserved = function(self, context)
