@@ -1,6 +1,12 @@
 local gps2 = module.require('/MWP/lib/movement/gps2.lua')
 local move = module.require('/MWP/lib/movement/move.lua')
 
+
+---@class Waypoint
+---@param name
+--- Name of waypoint
+---@param location
+--- Vector location of waypoint
 Waypoint = Class {
     constructor = function(self, _name, loc)
         local obj = {
@@ -14,6 +20,7 @@ Waypoint = Class {
     name = 'untitled_waypoint',
     location = vector.new(0,0,0),
 
+    ---@param newLocation Vector
     updateLocation = function(self, newLocation)
         local err, loc = false, newLocation or gps2.getLocation()
         if not err then

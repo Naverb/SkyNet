@@ -13,6 +13,13 @@ end
 
 
 
+local potato = {
+    ---@type potato
+    woah = 'yee'
+}
+
+potato.woah
+
 function yielding_object:yield(...)
     promises = table.pack(...)
     coroutine.yield(promises)

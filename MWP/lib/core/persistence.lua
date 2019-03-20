@@ -19,6 +19,30 @@
 
 --]]
 
+function get(var)
+    local varpath = fs.join(PERSISTENCE_PATH, var)
+    local val
+    if fs.exists(varpath) then
+        val = grabData(varpath)
+    else
+        val = nil
+    end
+
+    return val
+end
+
+function set(var,val)
+    local varpath = fs.join(PERSISTENCE_PATH,var)
+    return setData(varpath,val)
+end
+
+function persistentFor(label,breakCondition,action)
+
+end
+
+
+
+
 function persistent(value)
     local vartable = { persistent = true, value = value }
     if type(value) == 'table' then
