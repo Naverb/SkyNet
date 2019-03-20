@@ -41,6 +41,7 @@ Class = module.require('/MWP/lib/core/class.lua')
 -- =========== /MWP/lib/core/persistence.lua ============
 
 pst = module.require('/MWP/lib/core/persistence.lua')
+pst.initialize()
 
 -- ====================== SKYNETRC =======================
 -- ================= /MWP/sys/skynetrc ===================

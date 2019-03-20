@@ -19,104 +19,65 @@
 
 --]]
 
-function get(var)
-    local varpath = fs.join(PERSISTENCE_PATH, var)
-    local val
+PERSISTENCE_PATH = "/persistence"
+
+function initialize()
+    -- We run this function at startup to initialize the persistence filesystem
+    if not fs.exists(PERSISTENCE_PATH) then
+        ok, err = pcall(fs.makeDir,PERSISTENCE_PATH)
+        if not ok then
+            error(err)
+        end
+    end
+end
+function get(key)
+    -- Get the value of the persistent variable with label "key"
+    local varpath = fs.join(PERSISTENCE_PATH,key)
     if fs.exists(varpath) then
-        val = grabData(varpath)
-    else
-        val = nil
-    end
-
-    return val
-end
-
-function set(var,val)
-    local varpath = fs.join(PERSISTENCE_PATH,var)
-    return setData(varpath,val)
-end
-
-function persistentFor(label,breakCondition,action)
-
-end
-
-
-
-
-function persistent(value)
-    local vartable = { persistent = true, value = value }
-    if type(value) == 'table' then
-        -- Here we check to see if a reference to this table has already been
-        -- saved to the persistence filesystem.
-        vartable.persistedData = 'SOME STRING THAT IDENTIFIES THE LOCATION OF THE TABLE IN THE PERSISTENT FILESYSTEM.'
-    else
-        vartable.persistedData = value
-    end
-    return vartable
-    -- We are going to intercept the newIndex method via function environments,
-    -- so the variable should never end up with the value of vartable.
-end
-
-local function grabData(path)
-
-end
-
-persistence_mt = {
-    -- This table is the template for a metatable that handles writing the
-    -- current computer state to storage.
-
-    __index = function(tbl,key)
-        -- Recall the value of the global var 'key'.
-
-        -- First we check if a value for the variable exists.
-        local val = rawget(tbl,key) or nil
-        if not val then
-            -- If no value exists, we check the persistent filesystem.
-            local varpath = fs.join(tbl._PERSISTENCE_PATH, key)
-            if fs.exists(varpath) then
-                val = grabData(varpath)
-            else
-                -- The variable does not exist in the persistent filesystem, so
-                -- we check the enclosing environment for the variable.
-
-            end
-        end
-
-        return val
-    end,
-
-    __newindex = function(tbl,key,val)
-        -- Set the value of 'key' to 'val'
-
-        -- Create a filepath to store the persistent data.
-        local varpath = fs.combine(tbl._PERSISTENCE_PATH, key)
-
-        if val.persistent then
-            -- We identify that the variable in question is a persistent
-            -- variable, so now we move forward.
-            local enclosingDir = fs.getDir(varpath)
-
-            if not fs.exists(enclosingDir) then
-                fs.makeDir(enclosingDir)
-            end
-
-            local file = fs.open(varpath, 'w')
-            file.write(val.persistedData) -- Should we cast to string?
+        local file = fs.open(varpath,"r")
+        local ok, value = pcall(file.readAll)
+        if ok then
+            -- We now format the data from the string form in which it was stored.
+            value = textutils.unserialize(value)
             file.close()
-
-            -- Save the value of the variable to the environment.
-            rawset(tbl,key,val.value)
         else
-            -- Save the value of the variable to the environment.
-            if type(val) == 'function' then
-                -- Since we are creating a function, we add some metadata to the
-                -- function's environment for the persistence filesystem.
-                local f_env = { _PERSISTENCE_PATH = varpath }
-                local f_env_mt = { __index = getfenv() }
-                setmetatable(f_env,f_env_mt)
-                setfenv(val, f_env)
-            end
-            rawset(tbl,key,val)
+            error("Failed to read the value of the persistence variable " .. key)
         end
+        return value
+    else
+        return nil
     end
+end
+
+function set(key,value)
+    -- Set the value of the persistence variable with label "key" and value "var"
+
+    -- We first test whether the value we are about to write is not too complicated for the persistence filesystem.
+    local serialized_value = textutils.serialize(value)
+    local varpath = fs.join(PERSISTENCE_PATH,key)
+    local file = fs.open(varpath,"w")
+
+    local ok, err = pcall(file.write,serialized_value)
+
+    if not ok then
+        -- We should really revamp our error/logging system.
+        error(err)
+    end
+end
+
+function delete(key)
+    -- Delete the persistence variable with label "key"
+    local varpath = fs.join(PERSISTENCE_PATH,key)
+    local ok, err = pcall(file.delete,varpath)
+
+    if not ok then
+        error(err)
+    end
+end
+
+_module = {
+    initialize = initialize,
+    get = get,
+    set = set,
+    delete = delete
 }
