@@ -11,6 +11,20 @@
     23 August 2018
 --]]
 
+local function execute_files(filesToExec)
+    for _,filepath in ipairs(filesToExec) do
+        print('> Executing ' .. tostring(filepath))
+        local exec = loadfile(filepath)
+        setfenv(exec, getfenv())
+        -- We pass the filepath to the first argument of the executable. In a way, this emulates the way the first argument of a bash script is always the path to the current executable.
+        local ok, result = pcall(exec,filepath)
+        if not ok then
+            print(filepath .. ' failed to load properly.')
+            error(result)
+        end
+    end
+end
+
 -- This variable is used by some files to determine whether the system is
 -- running through start.lua or through some other means.
 IS_LOADER = true
@@ -48,5 +62,10 @@ pst.initialize()
 -- All files specified in skynetrc will be executed here after all critical
 -- libraries have been loaded.
 
-ok, result = nym.run('/MWP/sys/skynetrc.lua')
-if not ok then error(result) end
+textutils.slowPrint('> Running programs in skynetrc')
+local executables_file = fs.open('/MWP/sys/skynetrc','r')
+local executables = nym.readLines(executables_file)
+executables_file.close()
+execute_files(executables)
+
+textutils.slowPrint('> Executing all programs in skynetrc. Exiting to CraftOS.')

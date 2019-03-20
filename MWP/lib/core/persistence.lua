@@ -26,7 +26,7 @@ function initialize()
     if not fs.exists(PERSISTENCE_PATH) then
         ok, err = pcall(fs.makeDir,PERSISTENCE_PATH)
         if not ok then
-            error(err)
+            error(err,1)
         end
     end
 end
@@ -41,7 +41,7 @@ function get(key)
             value = textutils.unserialize(value)
             file.close()
         else
-            error("Failed to read the value of the persistence variable " .. key)
+            error("Failed to read the value of the persistence variable " .. key,1)
         end
         return value
     else
@@ -61,23 +61,16 @@ function set(key,value)
 
     if not ok then
         -- We should really revamp our error/logging system.
-        error(err)
+        error(err,1)
     end
 end
 
 function delete(key)
     -- Delete the persistence variable with label "key"
     local varpath = fs.combine(PERSISTENCE_PATH,key)
-    local ok, err = pcall(file.delete,varpath)
+    local ok, err = pcall(fs.delete,varpath)
 
     if not ok then
-        error(err)
+        error(err,1)
     end
 end
-
-_module = {
-    initialize = initialize,
-    get = get,
-    set = set,
-    delete = delete
-}
