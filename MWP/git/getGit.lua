@@ -2,7 +2,7 @@ rednet.open("right")
 redstone.setOutput("left", true)
 
 while true do
-    id, message = rednet.receive() -- wait until something is received over rednet
+    id, message = rednet.receive() -- wait until something is received over rednettttt
     if (message == "reloadGit") then
         redstone.setOutput("left", false)
         fs.delete('SkyNet')
