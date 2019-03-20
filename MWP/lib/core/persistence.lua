@@ -32,7 +32,7 @@ function initialize()
 end
 function get(key)
     -- Get the value of the persistent variable with label "key"
-    local varpath = fs.join(PERSISTENCE_PATH,key)
+    local varpath = fs.combine(PERSISTENCE_PATH,key)
     if fs.exists(varpath) then
         local file = fs.open(varpath,"r")
         local ok, value = pcall(file.readAll)
@@ -54,7 +54,7 @@ function set(key,value)
 
     -- We first test whether the value we are about to write is not too complicated for the persistence filesystem.
     local serialized_value = textutils.serialize(value)
-    local varpath = fs.join(PERSISTENCE_PATH,key)
+    local varpath = fs.combine(PERSISTENCE_PATH,key)
     local file = fs.open(varpath,"w")
 
     local ok, err = pcall(file.write,serialized_value)
@@ -67,7 +67,7 @@ end
 
 function delete(key)
     -- Delete the persistence variable with label "key"
-    local varpath = fs.join(PERSISTENCE_PATH,key)
+    local varpath = fs.combine(PERSISTENCE_PATH,key)
     local ok, err = pcall(file.delete,varpath)
 
     if not ok then
