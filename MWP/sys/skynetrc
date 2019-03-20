@@ -1,2 +1,2 @@
 /MWP/sys/hello.lua
-/MWP/tests/persistence_test/pre_reboot.lua
+/MWP/tests/log_test.lua

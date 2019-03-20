@@ -19,7 +19,7 @@ local function execute_files(filesToExec)
         -- We pass the filepath to the first argument of the executable. In a way, this emulates the way the first argument of a bash script is always the path to the current executable.
         local ok, result = pcall(exec,filepath)
         if not ok then
-            print(filepath .. ' failed to load properly.')
+            print('!!> ' .. filepath .. ' failed to load properly.')
             error(result)
         end
     end
@@ -28,6 +28,16 @@ end
 -- This variable is used by some files to determine whether the system is
 -- running through start.lua or through some other means.
 IS_LOADER = true
+
+-- =============== LOGGING AND REPORTING ================
+-- ====== /MWP/lib/core/[log,error,reporting].lua =======
+
+local log_loader = loadfile('/MWP/lib/core/log.lua')
+setfenv(log_loader, getfenv())
+ok,log = pcall(log_loader)
+if not ok then print(module) else print('Loaded logging API.') end
+
+log.initialize()
 
 -- ===================== MODULE.LUA =====================
 -- ============== /MWP/lib/core/module.lua ==============
