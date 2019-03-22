@@ -52,30 +52,30 @@ function initialize()
 
 	-- We now overwrite the print function to incorporate logging:
 	-- We do this in initialize because we want to make sure we have a logfile before we start using it.
+
+	local lua_write = write
+	write = function(str,line_prefix) -- In theory, line_prefix allows us to uppend information at each line. This would be handy to print what program we are currently running. Work in progress.
+		line_prefix = line_prefix or ''
+		local serialized_str
+		-- Very basic serialization code:
+		if type(str) == 'table' then
+			local ok, serialized_str = pcall(textutils.serialize,str)
+			if not ok then
+				serialized_str = tostring(str)
+			elseif serialized_str == "" or serialized_str == '{}' then
+				serialized_str = "[EMPTY_TABLE]"
+			end
+		else
+			serialized_str = tostring(str)
+		end
+
+		writeToLog(line_prefix .. serialized_str)
+		return lua_write(line_prefix .. str)
+	end
 	print = function(...)
 		-- We steal part of the built-in print function to format properly:
 
 		-- We also overwrite the original write function in this scope to write to the log file:
-
-		local lua_write = write
-		local write = function(str)
-
-			local serialized_str
-			-- Very basic serialization code:
-			if type(str) == 'table' then
-				local ok, serialized_str = pcall(textutils.serialize,str)
-				if not ok then
-					serialized_str = tostring(str)
-				elseif serialized_str == "" or serialized_str == '{}' then
-					serialized_str = "[EMPTY_TABLE]"
-				end
-			else
-				serialized_str = tostring(str)
-			end
-
-			writeToLog(serialized_str)
-			return write(str)
-		end
 
 		local nLinesPrinted = 0
 		local nLimit = select("#", ... )

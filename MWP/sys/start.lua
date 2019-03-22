@@ -11,6 +11,22 @@
     23 August 2018
 --]]
 
+-- This variable is used by some files to determine whether the system is
+-- running through start.lua or through some other means.
+IS_LOADER = true
+
+-- ================ ELEMENTARY LOGGING ==================
+-- =============== /MWP/lib/core/log.lua ================
+
+local log_loader = loadfile('/MWP/lib/core/log.lua')
+setfenv(log_loader, getfenv())
+ok,log = pcall(log_loader)
+if not ok then print(module) else print('> Loaded logging API.') end
+
+log.initialize()
+
+-- ==================== FILE EXECUTION ==================
+-- ======================================================
 local function execute_files(filesToExec)
     for _,filepath in ipairs(filesToExec) do
         print('> Executing ' .. tostring(filepath))
@@ -19,26 +35,12 @@ local function execute_files(filesToExec)
         -- We pass the filepath to the first argument of the executable. In a way, this emulates the way the first argument of a bash script is always the path to the current executable.
         local ok, result = pcall(exec,filepath)
         if not ok then
-            print('!!> ' .. filepath .. ' failed to load properly.')
-            error(result)
+            print('!!> ' .. filepath .. ' failed to load properly. Received Error:')
+            local ex = Exception:unserialize(result)
+            print(ex:string())
         end
     end
 end
-
--- This variable is used by some files to determine whether the system is
--- running through start.lua or through some other means.
-IS_LOADER = true
-
--- =============== LOGGING AND REPORTING ================
--- ====== /MWP/lib/core/[log,error,reporting].lua =======
-
-local log_loader = loadfile('/MWP/lib/core/log.lua')
-setfenv(log_loader, getfenv())
-ok,log = pcall(log_loader)
-if not ok then print(module) else print('Loaded logging API.') end
-
-log.initialize()
-
 -- ===================== MODULE.LUA =====================
 -- ============== /MWP/lib/core/module.lua ==============
 
@@ -46,7 +48,7 @@ log.initialize()
 local module_loader = loadfile('/MWP/lib/core/module.lua')
 setfenv(module_loader, getfenv())
 ok, module = pcall(module_loader)
-if not ok then print(module) else print('Module API loaded successfully.') end
+if not ok then print(module) else print('> Module API loaded successfully.') end
 
 -- Clear loaded libraries:
 module.clear_module_cache()
@@ -67,6 +69,13 @@ Class = module.require('/MWP/lib/core/class.lua')
 pst = module.require('/MWP/lib/core/persistence.lua')
 pst.initialize()
 
+-- ===================== REPORTING ======================
+-- ======== /MWP/lib/core/[error,reporting].lua =========
+
+error_lib = module.require('/MWP/lib/core/error.lua')
+Exception = error_lib.Exception
+try = error_lib.try
+
 -- ====================== SKYNETRC =======================
 -- ================= /MWP/sys/skynetrc ===================
 -- All files specified in skynetrc will be executed here after all critical
@@ -78,4 +87,4 @@ local executables = nym.readLines(executables_file)
 executables_file.close()
 execute_files(executables)
 
-textutils.slowPrint('> Executing all programs in skynetrc. Exiting to CraftOS.')
+textutils.slowPrint('> Executed all programs in skynetrc. Exiting to CraftOS.')
