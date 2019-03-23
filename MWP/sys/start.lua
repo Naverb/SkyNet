@@ -21,23 +21,29 @@ IS_LOADER = true
 local log_loader = loadfile('/MWP/lib/core/log.lua')
 setfenv(log_loader, getfenv())
 ok,log = pcall(log_loader)
-if not ok then print(module) else print('> Loaded logging API.') end
+if not ok then print(module) else print('Loaded logging API.') end
 
 log.initialize()
+LINE_PREFIX = '> '
 
 -- ==================== FILE EXECUTION ==================
 -- ======================================================
 local function execute_files(filesToExec)
     for _,filepath in ipairs(filesToExec) do
-        print('> Executing ' .. tostring(filepath))
+        print('Executing ' .. tostring(filepath))
         local exec = loadfile(filepath)
-        setfenv(exec, getfenv())
+        local exec_env = {LINE_PREFIX = '>> '}
+        setmetatable(exec_env,{__index = getfenv()})
+        setfenv(exec,exec_env)
         -- We pass the filepath to the first argument of the executable. In a way, this emulates the way the first argument of a bash script is always the path to the current executable.
         local ok, result = pcall(exec,filepath)
         if not ok then
-            print('!!> ' .. filepath .. ' failed to load properly. Received Error:')
+            LINE_PREFIX = '!!> '
+            print(filepath .. ' failed to load properly. Received Error:')
+            LINE_PREFIX = ''
             local ex = Exception:unserialize(result)
             print(ex:string())
+            LINE_PREFIX = '> '
         end
     end
 end
@@ -48,7 +54,7 @@ end
 local module_loader = loadfile('/MWP/lib/core/module.lua')
 setfenv(module_loader, getfenv())
 ok, module = pcall(module_loader)
-if not ok then print(module) else print('> Module API loaded successfully.') end
+if not ok then print(module) else print('Module API loaded successfully.') end
 
 -- Clear loaded libraries:
 module.clear_module_cache()
@@ -81,10 +87,11 @@ try = error_lib.try
 -- All files specified in skynetrc will be executed here after all critical
 -- libraries have been loaded.
 
-textutils.slowPrint('> Running programs in skynetrc')
+print('Running programs in skynetrc')
 local executables_file = fs.open('/MWP/sys/skynetrc','r')
 local executables = nym.readLines(executables_file)
 executables_file.close()
 execute_files(executables)
 
-textutils.slowPrint('> Executed all programs in skynetrc. Exiting to CraftOS.')
+print('Executed all programs in skynetrc. Exiting to CraftOS.')
+LINE_PREFIX = ''

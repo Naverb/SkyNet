@@ -21,7 +21,6 @@ Exception = Class {
 
     metatable = {
         __tostring = function(self)
-            print('Serializing')
             return self:serialize(false)
         end
     },

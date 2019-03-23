@@ -1,7 +1,7 @@
 local LOG_DIR = '/MWP/sys/log'
 local CURRENT_LOG_DIR = fs.combine(LOG_DIR,'recent.log')
 local current_log_number = 0
-local logfiles = { MAIN = 'recent.log'}
+local logfiles = {MAIN = 'recent.log'}
 
 function createLogFile(name,path)
 	-- Create a new log file with the given name and path (relative to LOG_DIR)
@@ -54,8 +54,7 @@ function initialize()
 	-- We do this in initialize because we want to make sure we have a logfile before we start using it.
 
 	local lua_write = write
-	write = function(str,line_prefix) -- In theory, line_prefix allows us to uppend information at each line. This would be handy to print what program we are currently running. Work in progress.
-		line_prefix = line_prefix or ''
+	write = function(str)
 		local serialized_str
 		-- Very basic serialization code:
 		if type(str) == 'table' then
@@ -69,13 +68,14 @@ function initialize()
 			serialized_str = tostring(str)
 		end
 
-		writeToLog(line_prefix .. serialized_str)
-		return lua_write(line_prefix .. str)
+		writeToLog(serialized_str)
+		return lua_write(str)
 	end
 	print = function(...)
-		-- We steal part of the built-in print function to format properly:
-
-		-- We also overwrite the original write function in this scope to write to the log file:
+		-- We steal part of the built-in print function to format properly.
+		-- We also overwrite the original write function in this scope to write to the log file.
+		local line_prefix = getfenv(2).LINE_PREFIX or ''
+		write(line_prefix) -- If the variable exists, append LINE_PREFIX to the beginning of every line.
 
 		local nLinesPrinted = 0
 		local nLimit = select("#", ... )

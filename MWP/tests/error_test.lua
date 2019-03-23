@@ -11,9 +11,8 @@ try(function()
             print(ex:string())
 
             print('Testing how exceptions are cast as strings now...')
-            local testEx2 = Exception:new('Test Error', 'Test Message 2')
 
-            error(tostring(testEx2))
+            error('Test Error 2')
         end,
         function()
             print('Running finally...')
