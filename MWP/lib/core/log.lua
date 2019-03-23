@@ -38,7 +38,7 @@ function initialize()
 		current_log_number = (string.match(header,'%d+') or 0) + 1 -- Just in case the header is missing, start back at 0.
 		-- We rename the log file here:
 		print('Current log number: ' .. current_log_number)
-		fs.move(CURRENT_LOG_DIR,fs.combine(LOG_DIR,'log_' .. tostring(current_log_number - 1)) )
+		fs.move(CURRENT_LOG_DIR,fs.combine(LOG_DIR,'log_' .. tostring(current_log_number - 1) .. '.log') )
 	else
 		-- There is no most-recent log file. We can just create one.
 		current_log_number = current_log_number + 1

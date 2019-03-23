@@ -121,6 +121,7 @@ function try(block,catch,finally,...)
 
     local ok, returned_data = pcall(block,...)
     if ok then
+        finally()
         return returned_data
     else
         -- In this case, returned_data is the Exception we caught.
