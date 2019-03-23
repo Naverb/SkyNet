@@ -104,12 +104,15 @@ function try(block,catch,finally,...)
     -- Will pass vararg to block, if there is an exception, will return what is returned by
     -- catch.
 
-    if not catch then
-        catch = function(...) return ... end
-    end
-
     if not finally then
         finally = function() end
+    end
+
+    if not catch then
+        catch = function(ex)
+            finally()
+            ex:throw(0)
+        end
     end
 
     assert(type(block) == 'function','Function try requires function arguments!')

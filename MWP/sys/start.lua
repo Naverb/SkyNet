@@ -24,6 +24,7 @@ ok,log = pcall(log_loader)
 if not ok then print(module) else print('Loaded logging API.') end
 
 log.initialize()
+-- While we are running in Skynet, we append this prefix to each line to make stdout cleaner.
 LINE_PREFIX = '> '
 
 -- ==================== FILE EXECUTION ==================
@@ -69,18 +70,18 @@ nym = module.require('/MWP/lib/core/notyourmomslua.lua')
 
 Class = module.require('/MWP/lib/core/class.lua')
 
--- ================== PERSISTENCE.LUA ===================
--- =========== /MWP/lib/core/persistence.lua ============
-
-pst = module.require('/MWP/lib/core/persistence.lua')
-pst.initialize()
-
 -- ===================== REPORTING ======================
 -- ======== /MWP/lib/core/[error,reporting].lua =========
 
 error_lib = module.require('/MWP/lib/core/error.lua')
 Exception = error_lib.Exception
 try = error_lib.try
+
+-- ================== PERSISTENCE.LUA ===================
+-- =========== /MWP/lib/core/persistence.lua ============
+
+pst = module.require('/MWP/lib/core/persistence.lua')
+pst.initialize()
 
 -- ====================== SKYNETRC =======================
 -- ================= /MWP/sys/skynetrc ===================
