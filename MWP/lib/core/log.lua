@@ -53,7 +53,7 @@ function initialize()
 	-- We now overwrite the print function to incorporate logging:
 	-- We do this in initialize because we want to make sure we have a logfile before we start using it.
 
-	local lua_write = write
+	local lua_write = write -- If this file is loaded more than once while the system is up, 'write' will not be the built-in write function. Rather, it will be the modified one below.
 	write = function(str)
 		local serialized_str
 		-- Very basic serialization code:

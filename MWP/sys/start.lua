@@ -65,17 +65,17 @@ module.clear_module_cache()
 
 nym = module.require('/MWP/lib/core/notyourmomslua.lua')
 
--- ===================== CLASS.LUA ======================
--- ============== /MWP/lib/core/class.lua ===============
-
-Class = module.require('/MWP/lib/core/class.lua')
-
 -- ===================== REPORTING ======================
 -- ======== /MWP/lib/core/[error,reporting].lua =========
 
 error_lib = module.require('/MWP/lib/core/error.lua')
 Exception = error_lib.Exception
 try = error_lib.try
+
+-- ===================== CLASS.LUA ======================
+-- ============== /MWP/lib/core/class.lua ===============
+
+Class = module.require('/MWP/lib/core/class_2.lua')
 
 -- ================== PERSISTENCE.LUA ===================
 -- =========== /MWP/lib/core/persistence.lua ============

@@ -176,7 +176,7 @@ function require(file)
 end
 
 if IS_LOADER then
-    print('> Skynet loader detected. Modifying module.require environment.')
+    print('Skynet loader detected. Modifying module.require environment.')
     setfenv(require, getfenv(1)) -- Layer 1 is the calling function (the skynet loader).
 else
     print('No skynet loader detected.')

@@ -10,6 +10,7 @@ function Class(attributes)
         -- don't modify any attributes of the class, but rather duplicate the
         -- attribute.
         if (type(val) == 'table') then
+            print('Preparing to clone table')
             return tableClone(val)
         else
             return val
@@ -81,6 +82,7 @@ function Class(attributes)
         end
     else
         inst_mt = { __index = function(object,key)
+            print('Looking up in class ' .. key)
 			local ok, result = pcall(lookupInClass, new_class[key])
             if ok then
             	object[key] = result

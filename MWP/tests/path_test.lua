@@ -26,9 +26,9 @@ local mainPathSupervisor = movelib.PathSupervisor:new{ name = 'MPS' } -- MainPat
 local legacyEventHandler = tasklib.LegacyEventHandler:new()
 
 print('Registering MPS')
-TS:registerToRegisteredTasks(mainPathSupervisor)
+TS:register(mainPathSupervisor)
 print('Registering LEH')
-TS:registerToRegisteredTasks(legacyEventHandler)
+TS:register(legacyEventHandler)
 local params = {yield = true, startAt = 1}
 TS:queueAction(path.traverse, path, params)
 

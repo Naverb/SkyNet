@@ -1,5 +1,6 @@
-Exception = Class {
-    constructor = function(self,message,ex_type)
+Exception = {
+    -- Since error.lua is loaded before class.lua, we have to write the Exception class using more traditional means.
+    new = function(self,message,ex_type)
         -- The default type of Exception is a generic Exception
         ex_type = ex_type or 'Exception'
 
@@ -9,21 +10,29 @@ Exception = Class {
         -- We parse together a formatted string since the built-in error function only supports strings.
         local exceptionData = '[BEGIN ERROR TYPE]' .. ex_type .. '[BEGIN ERROR MESSAGE]' .. message
 
-        local obj = {
+        local new_ex = {
             data = exceptionData,
             message = message,
             type = ex_type,
             traceback = {}
         }
 
-        return obj
+        local ex_metatable = {
+            __tostring = function(instance_ex)
+                return instance_ex:serialize(false)
+            end,
+            __index = self
+        }
+
+        setmetatable(new_ex,ex_metatable)
+
+        return new_ex
     end,
 
-    metatable = {
-        __tostring = function(self)
-            return self:serialize(false)
-        end
-    },
+    changeType = function(self,new_type)
+        self.type = new_type
+        self.data = '[BEGIN ERROR TYPE]' .. self.type .. '[BEGIN ERROR MESSAGE]' .. self.message
+    end,
 
     serialize = function(self,human_readable)
 
@@ -32,7 +41,7 @@ Exception = Class {
             local traceback = self.traceback
             local traceback_string = ''
             for _,level in ipairs(traceback) do
-                local s = line_prefix .. level.file .. ':' .. level.line .. ': '
+                local s = line_prefix .. tostring(level.file) .. ':' .. tostring(level.line) .. ': '
                 traceback_string = traceback_string .. s
             end
             return traceback_string
