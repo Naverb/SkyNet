@@ -1,8 +1,5 @@
-local module = loadfile('/MWP/lib/module.lua')()
-local EMPTY_BOOL = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_BOOL
-local EMPTY_PROPERTY = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_PROPERTY
-
-local Class = module.require('/MWP/lib/class.lua')
+local EMPTY_BOOL = nym.EMPTY_BOOL
+local EMPTY_PROPERTY = nym.EMPTY_PROPERTY
 
 local YieldingInterface = module.require('/MWP/lib/yielding/YieldingInterface.lua')
 local Promise = module.require('/MWP/lib/yielding/Promise.lua')
@@ -11,7 +8,6 @@ local Promise = module.require('/MWP/lib/yielding/Promise.lua')
 Task = Class {
     implements = YieldingInterface,
     constructor = function(self, params)
-
         local obj = {}
         obj.enabled = true
         obj.name = assert(params.name, "Attempted to create a task without specifying a name!")
@@ -31,22 +27,14 @@ Task = Class {
     isActive                = EMPTY_BOOL,
     enabled                 = EMPTY_BOOL,
     patient                 = EMPTY_BOOL, -- If patient, this task waits until all its promises are resolved before resuming.
-    enclosingTaskSequence   = {},
     requiredPromises        = {},
+    promisesToResolve       = {},
     name                    = EMPTY_PROPERTY,
     index                   = EMPTY_PROPERTY,
     registeredOutcome       = EMPTY_PROPERTY,
     procedure               = EMPTY_PROPERTY,
     action                  = EMPTY_PROPERTY,
     condition               = function() return true end,
-
-	registerToTaskSequence = function(self, taskSequence)
-		self.enclosingTaskSequence = taskSequence
-    end,
-
-    unqueueFromTaskSequence = function(self)
-        self.enclosingTaskSequence:unqueueTask(self)
-    end,
 
     checkCondition = function(self)
         if self.enabled then
@@ -56,20 +44,23 @@ Task = Class {
         end
     end,
 
-    yield = function(self, requiredPromises)
+    yield = function(self, requiredPromises, unqueue)
         self.isActive = false
         self.requiredPromises = requiredPromises or {}
+        if unqueue then
+            return true, coroutine.yield({__unqueue = true})
+        end
         return true, coroutine.yield()
     end,
 
-    yieldUntilResolved = function(self, requiredPromises)
+    yieldUntilResolved = function(self, requiredPromises,unqueue)
         self.patient = true
-        return self:yield(requiredPromises)
+        return self:yield(requiredPromises,unqueue)
     end,
 
     terminate = function(self, finalData)
         self.isActive = false
-        self:unqueueFromTaskSequence()
+        finalData.__unqueue = true
         return true, finalData
     end,
 
@@ -150,7 +141,7 @@ Task = Class {
 
     requestPromise = function(self, attributes)
         local promise = Promise:new{
-            askingTask = self,
+            askingTask = self.name,
             questionData = attributes.questionData,
             kind = assert(attributes.kind, self.name .. " attempted to requestPromise without specifying kind")
         }
@@ -170,10 +161,10 @@ Task = Class {
         end
     end,
 
-    findPromisesToResolve = function(self)
+    assignResolvablePromises = function(self, taskSequence)
         local promisesToResolve = {}
-        for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
-            if not (promise:resolved() or promise:reserved(self.name)) then -- Should this be resolved or reserved?
+        for _,promise in pairs(taskSequence.resolvablePromises) do
+            if not (promise:resolved() or promise:reserved(self.name)) then
                 for _, kind in pairs(promise.kind) do
                     if (kind == self.registeredOutcome) then
                         table.insert(promisesToResolve, promise)
@@ -182,7 +173,12 @@ Task = Class {
                 end
             end
         end
-        return promisesToResolve
+        self.promisesToResolve = promisesToResolve
+    end,
+
+    findPromisesToResolve = function(self)
+        -- This is just here for legacy compatibility
+        return self.promisesToResolve
     end,
 
     disable = function(self)

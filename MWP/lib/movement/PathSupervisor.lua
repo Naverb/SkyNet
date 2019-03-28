@@ -1,6 +1,3 @@
-local module = loadfile('/MWP/lib/module.lua')()
-local Class = module.require('/MWP/lib/class.lua')
-
 local Task = module.require('/MWP/lib/yielding/Task.lua')
 local fuellib = module.require('/MWP/lib/fuel')
 
@@ -60,7 +57,7 @@ PathSupervisor = Class {
             end
 
             if allPromisesResolved then
-                thisTask:unqueueFromTaskSequence()
+                return thisTask:terminate()
             end
 
             thisTask:yield()

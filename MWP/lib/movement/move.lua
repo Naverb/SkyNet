@@ -1,4 +1,3 @@
-local module = loadfile('/MWP/lib/module.lua')()
 local gps2 = module.require('/MWP/lib/movement/gps2.lua')
 
 -- Standard Vectors

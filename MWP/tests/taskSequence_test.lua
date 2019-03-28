@@ -1,8 +1,9 @@
-local module = loadfile('/MWP/lib/module.lua')()
-module.clear_module_cache()
+print('Advancing to module loading...')
 local tasklib = module.require('/MWP/lib/yielding')
+print('Loading the movement library now')
 local movelib = module.require('/MWP/lib/movement')
 
+print('Creating tasks...')
 local testTask1 = tasklib.Task:new {
     name = 'Test1',
     procedure = function()
@@ -98,8 +99,7 @@ local testTask2 = tasklib.Task:new {
             end
 
             print('Resolved the promises')
-            thisTask:unqueueFromTaskSequence()
-            thisTask:yield()
+            thisTask:yield(nil, true) -- No requied promises, but we want to unqueue this Task.
         end
     end
 }
@@ -120,12 +120,12 @@ local testTask3 = tasklib.Task:new {
             end
 
             print('Resolved the promises')
-            thisTask:unqueueFromTaskSequence()
-            thisTask:yield()
+            thisTask:yield(nil, true)
         end
     end
 }
 
+print('Generating the legacy event handler now')
 local test_os_task = tasklib.LegacyEventHandler:new()
 
 local testTaskSequence = tasklib.TaskSequence:new {
@@ -136,15 +136,16 @@ local otherTaskSequence = tasklib.TaskSequence:new {
     name = 'OtherTaskSequence'
 }
 
-testTask2:registerToTaskSequence(testTaskSequence)
-testTaskSequence:registerToRegisteredTasks(testTask2)
-otherTaskSequence:registerToRegisteredTasks(test_os_task)
-otherTaskSequence:registerToRegisteredTasks(testTask3)
+print('Registering to taskSequences...')
 
-testTaskSequence:queueTask(testTask1)
+testTaskSequence:register(testTask2)
+otherTaskSequence:register(test_os_task)
+otherTaskSequence:register(testTask3)
 
-otherTaskSequence:queueTask(testTaskSequence)
+testTaskSequence:queue(testTask1)
+otherTaskSequence:queue(testTaskSequence)
 
+print('Preparing to run')
 repeat
     status = otherTaskSequence:run()
 until not otherTaskSequence.enabled

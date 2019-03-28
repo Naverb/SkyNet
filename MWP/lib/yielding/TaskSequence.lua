@@ -1,11 +1,7 @@
-local module = loadfile('/MWP/lib/module.lua')()
-
-local EMPTY_BOOL = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_BOOL
-local EMPTY_PROPERTY = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_PROPERTY
-local tableClone = module.require('/MWP/lib/notyourmomslua.lua').tableClone
-local generateUID = module.require('/MWP/lib/notyourmomslua.lua').generateUID
-
-local Class = module.require('/MWP/lib/class.lua')
+local EMPTY_BOOL = nym.EMPTY_BOOL
+local EMPTY_PROPERTY = nym.EMPTY_PROPERTY
+local tableClone = nym.tableClone
+local generateUID = nym.generateUID
 
 local YieldingInterface = module.require('/MWP/lib/yielding/YieldingInterface.lua')
 local Task = module.require('/MWP/lib/yielding/Task.lua')
@@ -25,7 +21,6 @@ TaskSequence = Class {
 
     isActive               = EMPTY_BOOL,
     enabled                = EMPTY_BOOL,
-    enclosingTaskSequence  = {},
     pendingTasks           = {},
     registeredTasks        = {},
     tasksToRun             = {},
@@ -39,14 +34,6 @@ TaskSequence = Class {
         return ...
     end,
 
-    registerToTaskSequence = function(self, taskSequence)
-        self.enclosingTaskSequence = taskSequence
-    end,
-
-    registerToRegisteredTasks = function(self,task)
-        self.registeredTasks[task.registeredOutcome] = task
-    end,
-
     checkPromiseFulfillment = function(self, promise)
         for _,kind in pairs(promise.kind) do
             if self.registeredTasks[kind] ~= nil then
@@ -57,17 +44,20 @@ TaskSequence = Class {
     end,
 
     run = function(self)
-
         if self.enabled then
             self.isActive = true
             self:cleanupResolvablePromises()
             self:cleanupRequiredPromises()
-
             repeat
                 local noYieldingObjectsLeft, nextYieldingObject = self:getNextYieldingObject()
                 if not nextYieldingObject then
                     return self:yield(true) -- This boolean will be passed to "ok" in the enclosingTaskSequence. Do we want that? Perhaps we should return two values: one for "ok" and another to deterined whether this taskSequence was enabled or disabled.
                 else
+                    --[[
+                        Here we should write code that assignz the promises that the Task can fulfill. That way we can remove doubly linked lists.
+                    ]]
+                    nextYieldingObject:assignResolvablePromises(self)
+
                     local ok, returnedData = nextYieldingObject:run()
                     if nextYieldingObject.requiredPromises then
                         for _, promise in pairs(nextYieldingObject.requiredPromises) do
@@ -87,14 +77,18 @@ TaskSequence = Class {
 
                     if not ok then
                         print('Error running ' .. nextYieldingObject.name .. '; disabling. \n Error: ' .. textutils.serialise(returnedData))
-                        nextYieldingObject:unqueueFromTaskSequence()
+                        self:unqueue(nextYieldingObject)
                         nextYieldingObject:disable()
+                    elseif returnedData.__unqueue then
+                        self:unqueue(nextYieldingObject)
                     end
+
                 end
             until noYieldingObjectsLeft
             return self:yield(true)
         else
-            return self:yield(true)
+            -- Here we terminate the taskSequence from the enclosing taskSequence by returning a flag.
+            return self:yield({__unqueue = true})
         end
     end,
 
@@ -110,7 +104,7 @@ TaskSequence = Class {
             procedure = preppedFunc
         }
 
-        self:queueTask(wrappingTask)
+        self:queue(wrappingTask)
     end,
 
     enable = function(self)
@@ -121,32 +115,31 @@ TaskSequence = Class {
         self.enabled = false
     end,
 
-    queueTask = function(self, task)
+    register = function (self,task)
+        self.registeredTasks[task.registeredOutcome] = task
+    end,
+
+    queue = function(self, task)
         table.insert(self.pendingTasks, task)
-        task.enclosingTaskSequence = self
         task.index = #self.pendingTasks
     end,
 
-    unqueueTask = function(self, task)
+    unqueue = function(self, task)
         table.remove(self.pendingTasks, task.index)
         task.index = nil
     end,
 
     getNextYieldingObject = function(self)
         if #self.pendingTasks < 1 then
-            if self.enclosingTaskSequence.name then -- We check if the enclosing task sequence is actually an instantiated TaskSequence.
-                self.enclosingTaskSequence:unqueueTask(self)
-            else
-                -- This TaskSequence does not have an enclosing TaskSequence, so
-                -- we disable self in order to terminate the program.
-                self:disable()
-            end
+            self:disable()
         end
         if #self.tasksToRun <= 0 then
-            self.tasksToRun = tableClone(self.pendingTasks)
+            for k,v in pairs(self.pendingTasks) do
+                self.tasksToRun[k] = v
+            end
+            --self.tasksToRun = tableClone(self.pendingTasks)
             return true, nil -- We don't have a new yielding object to run until the enclosingTaskSequence queues this again.
-
-            else
+        else
             local nextYieldingObject = self.tasksToRun[1]
             table.remove(self.tasksToRun, 1)
             return false, nextYieldingObject

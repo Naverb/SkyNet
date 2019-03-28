@@ -1,9 +1,5 @@
-local module = loadfile('/MWP/lib/module.lua')()
-local EMPTY_BOOL = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_BOOL
-local EMPTY_PROPERTY = module.require('/MWP/lib/notyourmomslua.lua').EMPTY_PROPERTY
-
-local Class = module.require('/MWP/lib/class.lua')
-
+local EMPTY_BOOL = nym.EMPTY_BOOL
+local EMPTY_PROPERTY = nym.EMPTY_PROPERTY
 local YieldingInterface = module.require('/MWP/lib/yielding/YieldingInterface.lua')
 
 -- @CLASS LegacyEventHandler @PARAMS {name}
@@ -21,15 +17,10 @@ LegacyEventHandler = Class {
     end,
 
     isActive                = EMPTY_BOOL,
-    enclosingTaskSequence   = {},
     name 	                = EMPTY_PROPERTY,
     index               	= EMPTY_PROPERTY,
     enabled                 = EMPTY_BOOL,
     requiredPromises        = {}, -- We do not need required promises, but we want to interface with YieldingInterface.
-
-    registerToTaskSequence = function(self, taskSequence)
-        self.enclosingTaskSequence = taskSequence
-    end,
 
     yield = function(self)
         self.isActive = false
@@ -38,19 +29,17 @@ LegacyEventHandler = Class {
 
     terminate = function(self)
         self.isActive = false
-        self.enclosingTaskSequence:unqueueTask(self)
-        return true
+        return true, {__unqueue = true} -- This last flag tells the enclosing TaskSequence to terminate this task.
     end,
 
     run = function(self)
         self.isActive = true
-        local promisesToResolve = self:findPromisesToResolve()
 
         local data = {os.pullEventRaw()}
         local event = data[1]
 
         local allPromisesResolved = true
-        for _,promise in pairs(promisesToResolve) do
+        for _,promise in pairs(self.promisesToResolve) do
             if not promise.kind[1] then -- The first entry in promise.kind is the event called by os.pullEvent.
                 promise.answerData = data
                 promise:resolve()
@@ -69,10 +58,10 @@ LegacyEventHandler = Class {
         end
     end,
 
-    findPromisesToResolve = function(self)
+    assignResolvablePromises = function(self, taskSequence)
         local promisesToResolve = {}
-        for _,promise in pairs(self.enclosingTaskSequence.resolvablePromises) do
-            if not promise:reserved(self.name) then -- We need self.name to pass a context to reserve(), right?
+        for _,promise in pairs(taskSequence.resolvablePromises) do
+            if not (promise:resolved() or promise:reserved(self.name)) then
                 for _, kind in pairs(promise.kind) do
                     if (kind == self.registeredOutcome) then
                         table.insert(promisesToResolve, promise)
@@ -81,7 +70,7 @@ LegacyEventHandler = Class {
                 end
             end
         end
-        return promisesToResolve
+        self.promisesToResolve = promisesToResolve
     end,
 
     disable = function(self)
