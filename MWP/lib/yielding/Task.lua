@@ -92,7 +92,7 @@ Task = Class {
                 returnedData = {coroutine.resume(self.action)}
             else
                 -- This code is run if the task last yielded by calling coroutine.yield.
-                legacy_event_promise = self.requiredPromises['legacy_event'] -- The os_event_promise handles situations where the task calls coroutine.yield() without calling self:yield(). I.e. when rednet yields or gps... etc...
+                local legacy_event_promise = self.requiredPromises['legacy_event'] -- The os_event_promise handles situations where the task calls coroutine.yield() without calling self:yield(). I.e. when rednet yields or gps... etc...
                 if legacy_event_promise:resolved() then
                     legacy_event_promise.dataWasAccessed = true
                     returnedData = {coroutine.resume(self.action, unpack(legacy_event_promise.answerData))}

@@ -1,39 +1,41 @@
-kiwiInterface = {
-    mango = function() end
+TestInterface = {
+    ExampleFunction = function() end
 }
 
-kiwiExtends = {
-    apple = function(self,str) print(str) end
-}
-
-potatoMt = {
-    __add = function(potato,rhs)
-        return potato.cheezburger .. tostring(rhs)
+TestExtends = {
+    NewFunction = function(self,str)
+        print(str)
     end
 }
 
-potato = Class {
+TestMetatable = {
+    __add = function(self,rhs)
+        return self.attribute .. tostring(rhs)
+    end
+}
 
+TestClass = Class {
     constructor = function(self,str)
         local obj = {
-            cheezburger = str
+            attribute = str
         }
         return obj
     end,
 
-    metatable = potatoMt,
-    implements = kiwiInterface,
-    extends = kiwiExtends,
+    metatable = TestMetatable,
+    implements = TestInterface,
+    extends = TestExtends,
 
-    cheezburger = 'yee',
-    mango = function(self)
-        print(self.cheezburger)
+    attribute = 'Example_Default_Value',
+    ExampleFunction = function(self)
+        print(self.attribute)
     end
 }
 
-potatoInstance = potato:new('hot stuff')
-
-potatoInstance:mango()
-potatoInstance:apple('heck yeah')
-
-print(potatoInstance + 'yyeeeee')
+TestInstance = TestClass:new('Test')
+print('Testing if TestInstance can access ExampleFunction.')
+TestInstance:ExampleFunction()
+print('Testing if TestInstance can access the extended function NewFunction.')
+TestInstance:NewFunction('Extends Test')
+print('Testing TestInstance metatable.')
+print(TestInstance + 'Foo')

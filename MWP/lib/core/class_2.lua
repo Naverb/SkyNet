@@ -2,22 +2,25 @@ local tableClone = nym.tableClone
 
 function Class(attributes)
     local new_class = {}
-    local inst_mt
-    local class_mt
+    local inst_mt = {}
+    local class_mt = {}
 
-    local function lookupInClass(classToLookup,key)
-        print('Looking up in class ' .. tostring(key))
-        local val = try(function()
-            local val = classToLookup[key]
-            if (type(val) == 'table') then
-                return tableClone(val)
-            else
-                return val
+    function new_class.lookupInClass(class,key)
+        local val = try {
+            body = function()
+                local val = class[key]
+                if (type(val) == 'table') then
+                    return tableClone(val)
+                else
+                    return val
+                end
+            end,
+            catch = function(ex)
+                ex:changeType('ClassLookupException')
+                ex:throw()
             end
-        end, function(ex)
-            ex:changeType('ClassLookupException')
-            ex:throw()
-        end)
+        }
+        return val
     end
 
     local function implementInterface(interface)
@@ -27,9 +30,8 @@ function Class(attributes)
                 local val = new_class[k]
                 if val == nil or type(attr) ~= type(val) then
                     local ex_msg = 'Class failed to implement ' .. tostring(k) .. '.'
-                    print(ex_msg)
                     local ex = Exception:new(ex_msg,'ClassInterfaceException')
-                    ex:throw()
+                    ex:throw(0)
                 end
             end
         end
@@ -43,15 +45,23 @@ function Class(attributes)
     if attributes.implements then
         if #attributes.implements > 0 then
             for _,interface in pairs(attributes.implements) do
-                try(implementInterface,function(ex)
-                    ex:throw(3)
-                end,nil,interface)
+                try {
+                    body = implementInterface,
+                    args = interface,
+                    catch = function(ex)
+                        ex:throw(3)
+                    end
+                }
             end
         else
             -- In this case, the implements table is an interface itself since it is of length zero.
-            try(implementInterface,function(ex)
-                ex:throw(3)
-            end,nil,attributes.implements)
+            try {
+                body = implementInterface,
+                args = attributes.implements,
+                catch = function(ex)
+                    ex:throw(3)
+                end
+            }
         end
     end
 
@@ -61,15 +71,15 @@ function Class(attributes)
     end
 
     inst_mt.__index = function(object,key)
-        local val = lookupInClass(new_class,key)
+        local val = new_class:lookupInClass(key)
         object[key] = val
-        return object[key] -- We want to make sure that we return the instance's version of the attribute 'key' NOT the class's.
+        return val -- We want to make sure that we return the instance's version of the attribute 'key' NOT the class's.
     end
 
     if attributes.extends then
         -- Modify the __index metamethod of the class to look at the extended Class:
         class_mt.__index = function(this_class,key)
-            local val = lookupInClass(attributes.extends,key)
+            local val = new_class.lookupInClass(attributes.extends,key)
             this_class[key] = val
             return val
         end

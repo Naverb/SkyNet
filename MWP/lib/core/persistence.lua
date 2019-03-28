@@ -24,11 +24,11 @@ PERSISTENCE_PATH = "/persistence"
 function initialize()
     -- We run this function at startup to initialize the persistence filesystem
     if not fs.exists(PERSISTENCE_PATH) then
-        try(
-            function()
+        try {
+            body = function()
                 fs.makeDir(PERSISTENCE_PATH)
             end
-        )
+        }
     end
 end
 function get(key)
@@ -36,18 +36,18 @@ function get(key)
     local varpath = fs.combine(PERSISTENCE_PATH,key)
     if fs.exists(varpath) then
         local file = fs.open(varpath,"r")
-        local value = try(
-            function()
+        local value = try {
+            body = function()
                 local results = file.readAll()
                 return results
             end,
-            function(ex)
+            catch = function(ex)
                 Exception:new('Failed to read the value of the persistence variable ' .. key):throw()
             end,
-            function()
+            finally = function()
                 file.close()
             end
-        )
+        }
         value = textutils.unserialize(value)
         return value
     else
@@ -62,23 +62,23 @@ function set(key,value)
     local serialized_value = textutils.serialize(value)
     local varpath = fs.combine(PERSISTENCE_PATH,key)
     local file = fs.open(varpath,"w")
-    try (
-        function()
+    try {
+        body = function()
             file.write(serialized_value)
         end,
-        function(ex) ex:throw() end,
-        function()
+        catch = function(ex) ex:throw() end,
+        finally = function()
             file.close()
         end
-    )
+    }
 end
 
 function delete(key)
     -- Delete the persistence variable with label "key"
     local varpath = fs.combine(PERSISTENCE_PATH,key)
-    try (
-        function()
+    try {
+        body = function()
             fs.delete(varpath)
         end
-    )
+    }
 end

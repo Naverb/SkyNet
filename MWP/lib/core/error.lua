@@ -108,10 +108,15 @@ Exception = {
     end
 }
 
-function try(block,catch,finally,...)
+function try(_args)
     -- Tries to run block. If there is an error, pass it to catch. At the end, call finally.
     -- Will pass vararg to block, if there is an exception, will return what is returned by
     -- catch.
+
+    local body = _args.body
+    local catch = _args.catch
+    local finally = _args.finally
+    local passed_args = _args.args
 
     if not finally then
         finally = function() end
@@ -124,11 +129,11 @@ function try(block,catch,finally,...)
         end
     end
 
-    assert(type(block) == 'function','Function try requires function arguments!')
+    assert(type(body) == 'function','Function try requires function arguments!')
     assert(type(catch) == 'function','Function try requires function arguments!')
     assert(type(finally) == 'function','Function try requires function arguments!')
 
-    local ok, returned_data = pcall(block,...)
+    local ok, returned_data = pcall(body,passed_args)
     if ok then
         finally()
         return returned_data
