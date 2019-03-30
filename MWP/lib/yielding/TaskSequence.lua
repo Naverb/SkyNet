@@ -43,6 +43,20 @@ TaskSequence = Class {
         return false
     end,
 
+    assignResolvablePromises = function(self,taskSequence)
+        -- Check if the passed taskSequence has any promises that can be resolvable by the Tasks in this TaskSequence. If so, notify this TaskSequence to fulfill those promises.
+        for _,promise in pairs(taskSequence.resolvablePromises) do
+            if not (promise:resolved() or promise:reserved(self.name)) then
+                for _, kind in pairs(promise.kind) do
+                    if self.registeredTasks[kind] ~= nil then
+                        table.insert(self.resolvablePromises,promise)
+                        break
+                    end
+                end
+            end
+        end
+    end,
+
     run = function(self)
         if self.enabled then
             self.isActive = true
@@ -79,7 +93,7 @@ TaskSequence = Class {
                         print('Error running ' .. nextYieldingObject.name .. '; disabling. \n Error: ' .. textutils.serialise(returnedData))
                         self:unqueue(nextYieldingObject)
                         nextYieldingObject:disable()
-                    elseif returnedData.__unqueue then
+                    elseif returnedData['__unqueue'] then
                         self:unqueue(nextYieldingObject)
                     end
 
