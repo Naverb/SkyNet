@@ -75,7 +75,7 @@ try = error_lib.try
 -- ===================== CLASS.LUA ======================
 -- ============== /MWP/lib/core/class.lua ===============
 
-Class = module.require('/MWP/lib/core/class_2.lua')
+Class = module.require('/MWP/lib/core/class.lua')
 
 -- ================== PERSISTENCE.LUA ===================
 -- =========== /MWP/lib/core/persistence.lua ============

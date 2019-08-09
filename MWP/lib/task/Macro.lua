@@ -1,0 +1,1 @@
+-- Macro tasks are collections of micro tasks that accomplish a particular objective.
