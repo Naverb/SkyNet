@@ -1,0 +1,60 @@
+class Context {
+    -- Context stores the current state of the turtle. It needs to be updated often and saved to persistence often.
+
+    Attributes:
+        - keys: Key[]
+
+    function getDataByKeyname(keyname: string, noUpdate: string) {
+        return self.keys[keyname].get(noUpdate)
+    }
+
+    function expire(keyname: string) {
+        self.keys[keyname].expired = true
+    }
+
+	function getKey(string keyname) {
+		return keyname;
+	}
+
+	function createKey(string keyname = "", data = ?, expired = true, get = function() {} ) {
+		-- create a key with these attributes
+	}
+}
+
+class Key {
+    -- Keys are the atomic sources of data in the multitasking system. Each one corresponds to a particular variable determined by the state of the turtle.
+    Attributes:
+        - name: string
+        - data: unknown
+        - expired: bool
+        - get: function
+
+    function getData(noUpdate: bool) {
+        noUpdate = noUpdate or false
+        -- Returns the data associated with a key. If the key is expired, then set self.data to get() and return self.data. Otherwise, if the key is not expired, return self.data.
+        -- If noUpdate is true, then return self.data without calling get() even if the key expired.
+
+        if self.expired and not noUpdate {
+            self.data = self.get()
+            self.expired = false
+        }
+
+        return self.data
+    }
+
+}
+
+class Task {
+	-- Need to do multitasking
+		-- Should the task have some format/interface for passing off control to a different task?
+	-- Need to do things / interact things with the world
+		-- Need to be able to yield
+	-- Need to be able to reference and modify context (included as a subtable? Throw context into global table? etc?)
+		-- Need to expire keys
+	-- Needs a way to be executed
+	-- Needs to interact with persistence
+		-- Needs to keep track of how far it has run (interact with persistence?)
+			-- Perhaps we can store the instructions of the task as a string, and literally track the line numbers as we progress through the instructions?
+			-- We can even interpret the string line by line?
+		* We discussed adding a stack, in which we have persistence compatible tasks and a stack of tasks. If Task-A is on top of the stack and needs Task-B, we push Task-B to the top of the stack and run Task-B. Once Task-B finishes we pop it off the stack.
+}

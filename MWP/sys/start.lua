@@ -27,27 +27,6 @@ log.initialize()
 -- While we are running in Skynet, we append this prefix to each line to make stdout cleaner.
 LINE_PREFIX = '> '
 
--- ==================== FILE EXECUTION ==================
--- ======================================================
-local function execute_files(filesToExec)
-    for _,filepath in ipairs(filesToExec) do
-        print('Executing ' .. tostring(filepath))
-        local exec = loadfile(filepath)
-        local exec_env = {LINE_PREFIX = '>> '}
-        setmetatable(exec_env,{__index = getfenv()})
-        setfenv(exec,exec_env)
-        -- We pass the filepath to the first argument of the executable. In a way, this emulates the way the first argument of a bash script is always the path to the current executable.
-        local ok, result = pcall(exec,filepath)
-        if not ok then
-            LINE_PREFIX = '!!> '
-            print(filepath .. ' failed to load properly. Received Error:')
-            LINE_PREFIX = ''
-            local ex = Exception:unserialize(result)
-            print(ex:string())
-            LINE_PREFIX = '> '
-        end
-    end
-end
 -- ===================== MODULE.LUA =====================
 -- ============== /MWP/lib/core/module.lua ==============
 
@@ -71,6 +50,28 @@ nym = module.require('/MWP/lib/core/notyourmomslua.lua')
 error_lib = module.require('/MWP/lib/core/error.lua')
 Exception = error_lib.Exception
 try = error_lib.try
+
+-- ==================== FILE EXECUTION ==================
+-- ======================================================
+local function execute_files(filesToExec)
+    for _,filepath in ipairs(filesToExec) do
+        print('Executing ' .. tostring(filepath))
+        local exec = loadfile(filepath)
+        local exec_env = {LINE_PREFIX = '>> '}
+        setmetatable(exec_env,{__index = getfenv()})
+        setfenv(exec,exec_env)
+        -- We pass the filepath to the first argument of the executable. In a way, this emulates the way the first argument of a bash script is always the path to the current executable.
+        local ok, result = pcall(exec,filepath)
+        if not ok then
+            LINE_PREFIX = '!!> '
+            print(filepath .. ' failed to load properly. Received Error:')
+            LINE_PREFIX = ''
+            local ex = Exception:unserialize(result)
+            print(ex:string())
+            LINE_PREFIX = '> '
+        end
+    end
+end
 
 -- ===================== CLASS.LUA ======================
 -- ============== /MWP/lib/core/class.lua ===============
