@@ -50,7 +50,7 @@ local function loadModule(path)
             end
         end
 
-        local filename = fs.getName(path)
+        local filename = getFileName(fs.getName(path))
         if string.sub(filename, -4) == '.lua' then
             module.__name = string.sub(filename,1,-5)
             module.__path = normalizePath(path)
