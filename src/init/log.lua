@@ -1,10 +1,14 @@
-local LOG_DIR = '/MWP/sys/log'
+local CONFIG = ...
+local LOG_DIR = CONFIG.LOG.LOG_DIR
 local CURRENT_LOG_DIR = fs.combine(LOG_DIR,'recent.log')
-local current_log_number = 0
-local logfiles = {MAIN = 'recent.log'}
 
+local current_log_number = 0
+local logfiles = CONFIG.LOG.DEFAULT_LOGS
+--- Create a new log file with the given name and path (relative to LOG_DIR)
+--- @param name string
+---@param path string
 function createLogFile(name,path)
-	-- Create a new log file with the given name and path (relative to LOG_DIR)
+
 	local realpath = fs.combine(LOG_DIR,path)
 
 	local enclosing_dir = fs.getDir(realpath)
@@ -17,17 +21,22 @@ function createLogFile(name,path)
 	file.close()
 	logfiles[name] = path
 end
+--- Writes the string msg to the specified logfile
+--- @param msg string
+---@param logfile string
 function writeToLog(msg,logfile)
 	logfile = logfile or 'MAIN'
-	-- Writes the string msg to the specified logfile
 	local logpath = fs.combine(LOG_DIR,logfiles[logfile])
 	local file = fs.open(logpath,'a')
 	file.write(msg)
 	file.close()
 end
+--- @param msg string
+---@param logfile string
 function printToLog(msg,logfile)
 	writeToLog(msg .. '\n',logfile)
 end
+--- Create log files and overwrite default print and write.
 function initialize()
 	-- Create a new log file, renaming the last one.
 	-- We first rename the previous log file:

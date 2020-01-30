@@ -1,3 +1,5 @@
+print('Entered class_test.lua')
+
 TestInterface = {
     ExampleFunction = function() end
 }

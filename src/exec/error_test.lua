@@ -5,7 +5,7 @@ try {
         try {
             body = function()
                 print('Entering try')
-                local testEx = Exception:new('Test Error', 'Test Message')
+                local testEx = Exception:new('Test Message', 'Test Error')
                 testEx:throw()
             end,
             catch = function(ex)

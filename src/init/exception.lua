@@ -1,5 +1,32 @@
+local CONFIG = ...
+
+local function split(str, pat)
+    local t = {} -- NOTE: use {n = 0} in Lua-5.0
+    local fpat = "(.-)" .. pat
+    local last_end = 1
+    local s, e, cap = str:find(fpat, 1)
+    while s do
+        if s ~= 1 or cap ~= "" then
+            table.insert(t,cap)
+        end
+        last_end = e+1
+        s, e, cap = str:find(fpat, last_end)
+    end
+    if last_end <= #str then
+        cap = str:sub(last_end)
+        table.insert(t, cap)
+    end
+    return t
+end
+
+--- @class Exception
 Exception = {
-    -- Since error.lua is loaded before class.lua, we have to write the Exception class using more traditional means.
+    -- Since exception.lua is loaded before class.lua, we have to write the Exception class using more traditional means.
+
+    --- Create a new Exception.
+    ---@param message string
+    ---@param ex_type string
+    ---@return Exception
     new = function(self,message,ex_type)
         -- The default type of Exception is a generic Exception
         ex_type = ex_type or 'Exception'
@@ -29,6 +56,7 @@ Exception = {
         return new_ex
     end,
 
+    ---@param new_type string
     changeType = function(self,new_type)
         self.type = new_type
         self.data = '[BEGIN ERROR TYPE]' .. self.type .. '[BEGIN ERROR MESSAGE]' .. self.message
@@ -67,16 +95,16 @@ Exception = {
 
         if string.find(s,'[BEGIN ERROR TYPE]',1,true) and string.find(s,'[BEGIN ERROR MESSAGE]',1,true) then
 
-            local tb_data = nym.split(s,'%[BEGIN ERROR TYPE%]')
+            local tb_data = split(s,'%[BEGIN ERROR TYPE%]')
             local traceback_string,data = tb_data[1],tb_data[2]
 
-            local ex_type_message = nym.split(data,'%[BEGIN ERROR MESSAGE%]')
+            local ex_type_message = split(data,'%[BEGIN ERROR MESSAGE%]')
             local ex_type,message = ex_type_message[1],ex_type_message[2]
 
             local e = self:new(message,ex_type)
 
             local unserializeTraceback = function()
-                local traceback_arr = nym.split(traceback_string,':')
+                local traceback_arr = split(traceback_string,':')
                 -- Collapse any empty entries:
                 for i,v in ipairs(traceback_arr) do
                     if not v or v == ' ' then
@@ -108,10 +136,14 @@ Exception = {
     end
 }
 
+--- Tries to run block. If there is an error, pass it to catch. At the end, call finally.
+--- Will pass vararg to block, if there is an exception, will return what is returned by
+--- catch.
+--- Takes a `body`,`catch`,`finally`, and passes arguments through `args`.
+---@param _args table
+---@return any
 function try(_args)
-    -- Tries to run block. If there is an error, pass it to catch. At the end, call finally.
-    -- Will pass vararg to block, if there is an exception, will return what is returned by
-    -- catch.
+
 
     local body = _args.body
     local catch = _args.catch

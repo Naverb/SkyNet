@@ -1,5 +1,11 @@
-local tableClone = nym.tableClone
+local tableClone = nym.table.tableClone
 
+--- Create a new Class. This creates a table with a constructor `new`.
+--- `attributes` contains the functions and properties the Class posesses,
+--- it also permits the parameters `extends` and `implements` for OOP.
+--- Finally, `metatable` allows one to specify the metatable for instances.
+---@class Class
+---@param attributes table
 function Class(attributes)
     local new_class = {}
     local inst_mt = {}
@@ -15,6 +21,7 @@ function Class(attributes)
                     return val
                 end
             end,
+            ---@param ex Exception
             catch = function(ex)
                 ex:changeType('ClassLookupException')
                 ex:throw()
@@ -101,5 +108,4 @@ function Class(attributes)
     return new_class
 end
 
-_module = module.exportFunction(Class)
-return Class -- This line loads the Class API without using the Module API.
+_module = Class

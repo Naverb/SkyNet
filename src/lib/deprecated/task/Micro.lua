@@ -1,1 +1,0 @@
--- Micro tasks are tasks that consume 1 fuel or less. In principle, these are the small actions that can be repeated if the system reboots, or they are completed fast enough that the computer will not shut down before a microtask completes in the event of a chunk unload.

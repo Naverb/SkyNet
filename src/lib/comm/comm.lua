@@ -55,7 +55,7 @@ function sendVar(side, inVar, type)
 	if (string.len(serString) % 2) == 1 then
 	serString = serString .. "\0"
 	end
-    
+
     -- converts the string into an array of 16 bit values containing two 8 bit characters each
     while i <= string.len(serString) do
         outData[math.ceil(i/2)] = bit.bor(bit.blshift(string.byte(serString,i),8), string.byte(serString,i+1))
@@ -66,7 +66,7 @@ function sendVar(side, inVar, type)
     -- sends a ready signal to a receiving turtle
     redstone.setAnalogOutput(side, bit.bor(type, 1))
     redstone.setBundledOutput(side,outData[1])
-    
+
     -- waits to receive a ready signal
     while redstone.getAnalogInput(side) == 0 do
     os.sleep(0.05)
@@ -112,7 +112,7 @@ function receive(side, path)
     while(redstone.getAnalogInput(side) == 0) do
         os.sleep(0.05)
     end
-    
+
     local varOrFile = bit.band(redstone.getAnalogInput(side),2)
 
     -- notifies sending turtle that is ready for communication
@@ -135,7 +135,7 @@ function receive(side, path)
     for i = 1, #inData do
         rawData = rawData .. string.char(bit.blogic_rshift(inData[i],8),bit.band(inData[i],255))
     end
-    
+
     --returns the unserialized information
     if varOrFile == 0 then
         return textutils.unserialize(rawData)
