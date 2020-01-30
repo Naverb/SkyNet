@@ -13,10 +13,18 @@
 ]]
 
 PERSISTENCE_ROOT = config.findConfiguration('persistence')['PERSISTENCE_ROOT']
+PSTVar = module.require('/lib/core/pst/PSTVar.lua')
 
-local persistent_variable_cache
-local links = {}
-local paths = {}
+local persistent_variable_cache = {}
+setmetatable(persistent_variable_cache,{
+    __newindex = function(t,k,v)
+        t[label] = PSTVar:new {
+            ref = k,
+            path = fs.combine(PERSISTENCE_ROOT,k .. '.pfs'),
+            data = v
+        }
+    end
+})
 
 local function findPFSs(start_dir)
     local PFSs = {}
@@ -38,10 +46,8 @@ local function findPFSs(start_dir)
     return PFSs
 end
 
---- Run this function at startup to initialize the persistence filesystem, setting the persistent variable cache to whatever table is passed to `target_cache`
---- @param target_cache table
-function generate(target_cache)
-    persistent_variable_cache = target_cache or {}
+--- Run this function at startup to initialize the persistence filesystem.
+function generate()
     if not fs.exists(PERSISTENCE_ROOT) then
         try {
             body = function()
@@ -64,91 +70,49 @@ function generate(target_cache)
         }
         local contents = textutils.unserialize(body)
 
-        persistent_variable_cache[contents.ref] = contents.data
-        links[contents.ref] = contents.links
-        paths[contents.ref] = PFS
+        local new_pstvar = PSTVar:new {
+            ref = contents.ref,
+            path = PFS,
+            data = contents.data,
+            links = contents.links
+        }
+
+        persistent_variable_cache[contents.ref] = new_pstvar
     end
 
     -- Now that all PFS files have been loaded, we reconstruct the topological structure.
 
-    for ref,var in pairs(persistent_variable_cache) do
-        if links[ref] ~= nil then
-            for key,target_ref in pairs(links[ref]) do
+    for _,var in pairs(persistent_variable_cache) do
+        if var.links ~= {} then
+            for key,target_ref in pairs(var.links) do
                 var[key] = persistent_variable_cache[target_ref]
             end
         end
     end
 end
 
---- Get the value of the persistent variable with label "key"
-function get(key)
-    local varpath = fs.combine(PERSISTENCE_ROOT,key)
-    if fs.exists(varpath) then
-        local file = fs.open(varpath,"r")
-
-        local value = try {
-            body = function ()
-                local results = file.readAll()
-                return results
-            end,
-            catch = function (ex)
-                Exception:new('Failed to read the value of the persistence variable ' .. key):throw()
-            end,
-            finally = function()
-                file.close()
-            end
-        }
-
-        value = textutils.unserialize(value)
-        return value
-    else
-        return nil
-    end
+--- Return a reference to the persistent_variable_cache
+--- @return table
+function bind()
+    return persistent_variable_cache
 end
 
---- Set the value of the persistence variable with label "key" and value "var"
-function set(key,value)
-
-    -- We first test whether the value we are about to write is not too complicated for the persistence filesystem.
-    local serialized_value = textutils.serialize(value)
-    local varpath = fs.combine(PERSISTENCE_ROOT,key)
-    local file = fs.open(varpath,"w")
-    try {
-        body = function()
-            file.write(serialized_value)
-        end,
-        finally = function()
-            file.close()
-        end
-    }
-end
 
 --- Delete the persistence variable with label "key"
 --- If an Exception is caught during deletion, do not remove the persistent variable from cache.
 --- @param key string
-function delete(key)
-
-    local data = persistent_variable_cache[key]
-    local linked_data = links[key]
-    local varpath = paths[key]
-
-
+function delete(parent_table,key)
+    local pstvar = parent_table[key]
     try {
         body = function ()
-            persistent_variable_cache[key] = nil
-            paths[key] = nil
-            links[key] = nil
-            fs.delete(varpath)
+            parent_table[key] = nil
+            fs.delete(pstvar.path)
         end,
         ---@param ex Exception
         catch = function(ex)
             ex:changeType('PersistenceVarException')
-
             -- Since we failed to delete the persistent_variable, do not delete.
-            persistent_variable_cache[key] = data
-            links[key] = linked_data
-            paths[key] = varpath
-
+            parent_table[key] = pstvar
             ex:throw()
         end
     }

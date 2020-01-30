@@ -27,13 +27,13 @@ if not ok then print(module) else print('Module API loaded successfully.') end
 module.clearModuleCache()
 
 -- Load main libraries
-
+config = module.require('/lib/core/config.lua')
 Class = module.require('/lib/core/class.lua')
 
---pst = module.require('/lib/core/persistence.lua')
---pst.initialize()
+pst = module.require('/lib/core/pst')
+pst.core.generate()
+_P = pst.core.bind()
 
-config = module.require('/lib/core/config.lua')
 
 -- ====================== SKYNETRC =======================
 -- =================== /etc/skynetrc =====================

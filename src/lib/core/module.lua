@@ -111,7 +111,7 @@ end
 local function ignoreThisFile(file)
     if string.sub(file,1,1) == '.' then
         return true
-    elseif string.sub(file,-4) == '.doc' then
+    elseif string.sub(file,-3) == '.md' then
         return true
     elseif string.sub(file,1,2) == '__' then
         return true

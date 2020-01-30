@@ -4,9 +4,14 @@ local tableClone = nym.table.tableClone
 --- `attributes` contains the functions and properties the Class posesses,
 --- it also permits the parameters `extends` and `implements` for OOP.
 --- Finally, `metatable` allows one to specify the metatable for instances.
----@class Class
----@param attributes table
-function Class(attributes)
+--- @param attributes table
+--- @return Class
+local function Class_Constructor(attributes)
+    ---@class Class
+    ---@field constuctor function
+    ---@field extends table
+    ---@field implements table
+    ---@field metatable table
     local new_class = {}
     local inst_mt = {}
     local class_mt = {}
@@ -108,4 +113,4 @@ function Class(attributes)
     return new_class
 end
 
-_module = Class
+_module = Class_Constructor
