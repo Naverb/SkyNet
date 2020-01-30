@@ -14,7 +14,15 @@ function loadConfiguration(package_name)
 
     local config_data = {}
     if fs.exists(config_file) and not fs.isDir(config_file) then
-        local raw_data = nym.file.readLines(config_file)
+        local file = fs.open(config_file,'r')
+        local raw_data = try {
+            body = function ()
+                return file.readAll()
+            end,
+            finally = function ()
+                file.close()
+            end
+        }
         config_data = textutils.unserialize(raw_data)
     else
         local ex = Exception:new('Failed to find config file for ' .. package_name,'FileNotFoundException')
