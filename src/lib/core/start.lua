@@ -30,10 +30,9 @@ module.clearModuleCache()
 config = module.require('/lib/core/config.lua')
 Class = module.require('/lib/core/class.lua')
 
-pst = module.require('/lib/core/pst')
-pst.core.generate()
-_P = pst.core.bind()
-
+pst = module.require('/lib/core/pst/pst2.lua')
+pst.generate()
+_P = pst.bind()
 
 -- ====================== SKYNETRC =======================
 -- =================== /etc/skynetrc =====================
