@@ -23,7 +23,6 @@ local helper_functions = {
     --- @param k string
     get = function(var,k)
         if var.links[k] ~= nil then
-            print('Forwarding request for ' .. k .. ' to ' .. var.links[k])
             return persistent_variable_cache[var.links[k]]
         else
             return var.data[k]
