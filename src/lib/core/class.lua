@@ -81,7 +81,6 @@ local function Class_Constructor(attributes)
         class_mt = tableClone(attributes.metatable)
         inst_mt = tableClone(attributes.metatable)
     end
-
     inst_mt.__index = function(object,key)
         local val = new_class:lookupInClass(key)
         object[key] = val

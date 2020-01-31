@@ -43,4 +43,15 @@ end
 print('Init complete! Proceeding to post-init.')
 -- Proceed to post-init
 LINE_PREFIX = 'SKYNET> '
-os.run(getfenv(),CONFIG.POST_INIT)
+try {
+    body = function ()
+        os.run(getfenv(),CONFIG.POST_INIT)
+    end,
+    --- @param ex Exception
+    catch = function (ex)
+        LINE_PREFIX = 'INIT> '
+        print(ex:string())
+    end
+}
+
+os.run(getfenv(),'/exec/emulator_close.lua')

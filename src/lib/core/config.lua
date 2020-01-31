@@ -3,7 +3,7 @@
 --- Returns a table of everything in the config file.
 ---@param package_name string
 ---@return table
-function loadConfiguration(package_name)
+function retrieve(package_name)
     -- Identify the subdirectories, if any.
     local dirs = nym.algo.splitString(package_name,'.')
     local config_file = '/etc'
