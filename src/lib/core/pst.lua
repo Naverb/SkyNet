@@ -30,8 +30,8 @@ local helper_functions = {
     end,
 
     --- @param var PSTVar
-    ---@param k string
-    ---@param v any
+    --- @param k string
+    --- @param v any
     set = function(var,k,v)
         if var.links[k] ~= nil then
             persistent_variable_cache[var.links[k]] = v
@@ -49,26 +49,6 @@ local helper_functions = {
             links = var.links
         }
         return textutils.serialize(obj)
-    end,
-    --- Remove a PSTVar from table and disk
-    --- @param parent_table table<string,PSTVar>
-    --- @param key string
-    delete = function(parent_table, key)
-        local var = parent_table[key]
-        try {
-            body = function ()
-                parent_table[key] = nil
-                -- Do we also want to destroy child tables?
-                fs.delete(var.path)
-            end,
-            ---@param ex Exception
-            catch = function (ex)
-                ex:changeType('PSTVarException')
-                -- Since we failed to delete the PSTVar, undo any changes we did,
-                parent_table[key] = var
-                ex:throw()
-            end
-        }
     end
 }
 
@@ -98,6 +78,7 @@ PSTVar = {
                     data = v
                 })
                 links[k] = child_ref
+                persistent_variable_cache[child_ref] = wrapped_table
             else
                 data[k] = v
             end
@@ -204,6 +185,28 @@ function generate()
     end
 end
 
+--- Remove a PSTVar from cache and disk
+--- @param key string
+function delete(key)
+    local var = persistent_variable_cache[key]
+    try {
+        body = function ()
+            persistent_variable_cache[key] = nil
+            print('Removed pstvar from cache, removing from disk now..')
+            -- Do we also want to destroy child tables?
+            fs.delete(var.path)
+        end,
+        ---@param ex Exception
+        catch = function (ex)
+            print('Reached catch')
+            ex:changeType('PSTVarException')
+            -- Since we failed to delete the PSTVar, undo any changes we did,
+            persistent_variable_cache[key] = var
+            ex:throw()
+        end
+    }
+end
+
 --- Return a reference to the persistent_variable_cache
 --- @return table
 function bind()
@@ -213,7 +216,7 @@ function bind()
             --- Since we wrapped the persistent_variable_cache, this metafunction will handle all variable assignments, not just those that don't already exist.
             if persistent_variable_cache[k] then
                 -- There already exists a PSTVar at this index, so we delete it first:
-                helper_functions.delete(persistent_variable_cache,k)
+                delete(persistent_variable_cache,k)
 
             end
 

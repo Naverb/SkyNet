@@ -30,7 +30,7 @@ module.clearModuleCache()
 config = module.require('/lib/core/config.lua')
 Class = module.require('/lib/core/class.lua')
 
-pst = module.require('/lib/core/pst/pst2.lua')
+pst = module.require('/lib/core/pst.lua')
 pst.generate()
 _P = pst.bind()
 
