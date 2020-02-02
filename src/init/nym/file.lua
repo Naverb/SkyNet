@@ -20,7 +20,7 @@ function readLines(filepath)
     else
         table.insert(lines,first_line)
         local next_line = file.readLine()
-        while next_line ~= '' do
+        while next_line and (next_line ~= '') do
             table.insert(lines,next_line)
             next_line = file.readLine()
         end

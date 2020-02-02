@@ -12,11 +12,22 @@
     to write to the system.
 ]]
 
-PERSISTENCE_ROOT = config.retrieve('persistence')['PERSISTENCE_ROOT']
+local PERSISTENCE_ROOT = config.retrieve('persistence')['PERSISTENCE_ROOT']
 
 -- This table stores all the data from persistence.
 --- @type table<string,PSTVar>
 local persistent_variable_cache = {}
+--[[
+    TODO: Should we have a table that stores all the pointers of already loaded PSTVars. This allows us to track if data was already loaded into the persistent filesystem and prevent duplication i.e. preserve reference topology.
+    local already_loaded_tables = {
+        pointer = {
+            ref = pstvar_ref,
+            connections = [integer]
+        }
+        pointer.connections tracks the number of times this variable is referenced. When it is zero, the pstvar is an orphan, so it should be deleted.
+}
+]]
+
 
 local helper_functions = {
     --- @param var PSTVar
@@ -33,12 +44,8 @@ local helper_functions = {
     --- @param k string
     --- @param v any
     set = function(var,k,v)
-        if var.links[k] ~= nil then
-            persistent_variable_cache[var.links[k]] = v
-        else
-            var.data[k] = v
-            var:save()
-        end
+        var.data[k] = v
+        var:save()
     end,
 
     ---@param var PSTVar
@@ -66,28 +73,30 @@ PSTVar = {
 
         -- PSTVars have a weird construction: for each subtable, we need to create another PSTVar, hence the recursion below. ANY CIRCULAR REFERENCES WILL CRASH SKYNET. THIS IS A SERIOUS CONCERN THAT NEEDS TO BE ADDRESSED!
 
-        local data = {}
         local links = args.links or {}
         for k,v in pairs(args.data) do
+            -- It would probably be bad if we put a PSTVar in args.data.
+            -- The naive solution would be to serialize the PSTVar first to strip any function metadata, leaving just the data needed to reconstruct said PSTVar.
             if type(v) == 'table' then
-                local child_ref = args.ref .. '.' .. k
+                args.data[k] = nil
+                local child_ref = args.ref .. '.' .. tostring(k)
                 local wrapped_table = PSTVar:new({
                     ref = child_ref,
                     -- remove .pfs extension then change name
-                    path = string.sub(args.path,1,-5) .. '.' .. k .. '.pfs',
+                    path = string.sub(args.path,1,-5) .. '.' .. tostring(k) .. '.pfs',
                     data = v
                 })
                 links[k] = child_ref
                 persistent_variable_cache[child_ref] = wrapped_table
             else
-                data[k] = v
+                args.data[k] = v
             end
         end
 
         local obj = {
             ref = args.ref,
             path = args.path,
-            data = data,
+            data = args.data,
             links = links,
 
             serialize = helper_functions.serialize,
@@ -164,7 +173,7 @@ function generate()
 
     for _,PFS in ipairs(PFSs) do
         local file = fs.open(PFS,'r')
-        local body = try {
+        local raw_contents = try {
             body = function()
                 return file.readAll()
             end,
@@ -173,7 +182,7 @@ function generate()
             end
         }
 
-        local contents = textutils.unserialize(body)
+        local contents = textutils.unserialize(raw_contents)
         local new_var = PSTVar:new({
             ref = contents.ref,
             path = PFS,
@@ -191,14 +200,15 @@ function delete(key)
     local var = persistent_variable_cache[key]
     try {
         body = function ()
+            for _,child_ref in pairs(var.links) do
+                delete(child_ref)
+            end
             persistent_variable_cache[key] = nil
-            print('Removed pstvar from cache, removing from disk now..')
             -- Do we also want to destroy child tables?
             fs.delete(var.path)
         end,
         ---@param ex Exception
         catch = function (ex)
-            print('Reached catch')
             ex:changeType('PSTVarException')
             -- Since we failed to delete the PSTVar, undo any changes we did,
             persistent_variable_cache[key] = var
@@ -212,21 +222,18 @@ end
 function bind()
     return setmetatable({}, {
         __index = persistent_variable_cache,
-        __newindex = function(t,k,v)
+        __newindex = function(_,key,value)
             --- Since we wrapped the persistent_variable_cache, this metafunction will handle all variable assignments, not just those that don't already exist.
-            if persistent_variable_cache[k] then
+            if persistent_variable_cache[key] then
                 -- There already exists a PSTVar at this index, so we delete it first:
-                delete(persistent_variable_cache,k)
-
+                delete(key)
             end
-
             local new_var = PSTVar:new({
-                ref = k,
-                path = fs.combine(PERSISTENCE_ROOT,k .. '.pfs'),
-                data = v
+                ref = key,
+                path = fs.combine(PERSISTENCE_ROOT,key .. '.pfs'),
+                data = value
             })
-
-            persistent_variable_cache[k] = new_var
+            persistent_variable_cache[key] = new_var
         end
     })
 end
