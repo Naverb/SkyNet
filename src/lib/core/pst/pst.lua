@@ -33,10 +33,10 @@ local helper_functions = {
     --- @param var PSTVar
     --- @param k string
     get = function(var,k)
-        if var.links[k] ~= nil then
-            return persistent_variable_cache[var.links[k]]
+        if var.__links[k] ~= nil then
+            return persistent_variable_cache[var.__links[k]]
         else
-            return var.data[k]
+            return var.__data[k]
         end
     end,
 
@@ -44,16 +44,16 @@ local helper_functions = {
     --- @param k string
     --- @param v any
     set = function(var,k,v)
-        var.data[k] = v
-        var:save()
+        var.__data[k] = v
+        var:__save()
     end,
 
     ---@param var PSTVar
     serialize = function(var)
         local obj = {
-            ref = var.ref,
-            data = var.data,
-            links = var.links
+            ref = var.__ref,
+            data = var.__data,
+            links = var.__links
         }
         return textutils.serialize(obj)
     end
@@ -94,20 +94,16 @@ PSTVar = {
         end
 
         local obj = {
-            ref = args.ref,
-            path = args.path,
-            data = args.data,
-            links = links,
-
-            serialize = helper_functions.serialize,
-            get = helper_functions.get,
-            set = helper_functions.set,
+            __ref = args.ref,
+            __path = args.path,
+            __data = args.data,
+            __links = links,
 
             --- Save to disk
             --- @param self PSTVar
-            save = function (self)
-                local serialized_var = self:serialize()
-                local file = fs.open(self.path,'w')
+            __save = function (self)
+                local serialized_var = tostring(self)
+                local file = fs.open(self.__path,'w')
 
                 try {
                     body = function ()
@@ -128,7 +124,7 @@ PSTVar = {
 
         -- Save to disk
         -- Ideally we wouldn't re-write the .PFS if it already exists. Fix this later.
-        obj:save()
+        obj:__save()
         return obj
     end
 }
@@ -197,24 +193,29 @@ end
 --- Remove a PSTVar from cache and disk
 --- @param key string
 function delete(key)
-    local var = persistent_variable_cache[key]
-    try {
-        body = function ()
-            for _,child_ref in pairs(var.links) do
-                delete(child_ref)
+    -- first check if such a PSTVar exists
+    if persistent_variable_cache[key] then
+        local var = persistent_variable_cache[key]
+        try {
+            body = function ()
+                for _,child_ref in pairs(var.__links) do
+                    delete(child_ref)
+                end
+                persistent_variable_cache[key] = nil
+                -- Do we also want to destroy child tables?
+                fs.delete(var.__path)
+            end,
+            ---@param ex Exception
+            catch = function (ex)
+                ex:changeType('PSTVarException')
+                -- Since we failed to delete the PSTVar, undo any changes we did,
+                persistent_variable_cache[key] = var
+                ex:throw()
             end
-            persistent_variable_cache[key] = nil
-            -- Do we also want to destroy child tables?
-            fs.delete(var.path)
-        end,
-        ---@param ex Exception
-        catch = function (ex)
-            ex:changeType('PSTVarException')
-            -- Since we failed to delete the PSTVar, undo any changes we did,
-            persistent_variable_cache[key] = var
-            ex:throw()
-        end
-    }
+        }
+    else
+        print('Attempted to delete nonexistent PSTVar: ' .. tostring(key))
+    end
 end
 
 --- Return a reference to the persistent_variable_cache
