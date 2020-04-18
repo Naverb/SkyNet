@@ -44,7 +44,25 @@ local helper_functions = {
     --- @param k string
     --- @param v any
     set = function(var,k,v)
-        var.__data[k] = v
+        if var.__links[k] then
+            -- If there is a variable linked, we need to delete the orphan
+            delete(var.__links[k])
+            var.__links[k] = nil
+        end
+
+        if type(v) == 'table' then
+            -- We want to create a new PSTVar here and link it
+            local child_ref = var.__ref .. '.' .. tostring(k)
+            local wrapped_table = PSTVar:new({
+                ref = child_ref,
+                path = string.sub(var.__path,1,-5) .. '.' .. tostring(k) .. '.pfs',
+                data = v
+            })
+            persistent_variable_cache[child_ref] = wrapped_table
+            var.__links[k] = child_ref
+        else
+            var.__data[k] = v
+        end
         var:__save()
     end,
 
