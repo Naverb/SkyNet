@@ -3,8 +3,10 @@ Context = module.require('/lib/task/Context.lua')
 local ctx = Context:new()
 
 ctx:bind('test_main')
+
 ctx:set('foo',0)
-ctx:hook('foo',function (foo_val)
+
+ctx:hook('foo', function (foo_val)
     print('Received hook for reading foo!')
     print('Current value: ' .. foo_val)
     ctx:set('foo',foo_val + 1)

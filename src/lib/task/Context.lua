@@ -1,4 +1,5 @@
---- A naive context Class with getters and setters to interact with persistence.
+-- A naive context Class with getters and setters to interact with persistence.
+-- TODO: What happens if we attempt to use an unbound Context?
 --- @Class Context
 Context = Class {
     hooks = {},
@@ -16,13 +17,18 @@ Context = Class {
         -- be a Task?
         self.hooks[var] = action
     end,
+    raw_get = function(self,var)
+        -- Get the value of a context variable **without** running any hooks, so
+        -- we avoid regressing into an infinite loop.
+        return self.data[var]
+    end,
     get = function(self,var)
-        local current_value = self.data[var]
+        local current_val = self.data[var]
         -- Run any hook to update data.
         if self.hooks[var] then
             -- We pass this as an argument to prevent calling get(var) within an
             -- action (with the same var) and regressing into an infinite loop.
-            self.hooks[var](current_value)
+            self.hooks[var](current_val)
         end
         return self.data[var] -- Now the variable is possibly updated
     end,
