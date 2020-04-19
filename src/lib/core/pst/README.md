@@ -1,5 +1,13 @@
 # Skynet Persistence library
 
+### Update 19 April 2020
+
+We should create a standard for serializing objects into PSTVars. Perhaps we can
+add a function `serialize` for each class, and persistence calls this function
+if it exists.
+
+### 7 January 2020
+
 There are two key elements of the data we want to save to persistence:
 
 - Raw data: strings, numbers, etc..
