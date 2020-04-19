@@ -60,6 +60,10 @@ local helper_functions = {
             })
             persistent_variable_cache[child_ref] = wrapped_table
             var.__links[k] = child_ref
+        elseif type(v) == 'function' then
+            -- We cannot serialize functions. What is the best way to deal with
+            -- this?
+            var.__data[k] = tostring(v)
         else
             var.__data[k] = v
         end
@@ -106,6 +110,10 @@ PSTVar = {
                 })
                 links[k] = child_ref
                 persistent_variable_cache[child_ref] = wrapped_table
+            elseif type(v) == 'function' then
+                -- We cannot serialize functions. What is the best way to deal with
+                -- this?
+                args.data[k] = tostring(v)
             else
                 args.data[k] = v
             end
