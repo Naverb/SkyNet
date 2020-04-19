@@ -12,13 +12,14 @@ Dispatcher = Class {
     end,
 
     getTasksCount = function (self)
-        -- Surely there must be a better way to accomplish thiss
+        -- Surely there must be a better way to accomplish this
         local count = 0
         for _ in pairs(self.tasks) do
             count = count + 1
         end
         return count
     end,
+
     queue = function (self, name, task)
         assert(name, 'Cannot queue a task without a name!')
         if type(task) == 'function' then
@@ -92,8 +93,8 @@ Dispatcher = Class {
         repeat
             self:cycle(table.unpack(yield_data))
             yield_data = {os.pullEventRaw()} -- Should this just be pullEvent?
-            self:unexpire()
             self.context:set('__yield_data',yield_data)
+            self:unexpire()
         until self:getTasksCount() < 1
     end
 
