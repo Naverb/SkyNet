@@ -87,6 +87,12 @@ local function Class_Constructor(attributes)
         return val -- We want to make sure that we return the instance's version of the attribute 'key' NOT the class's.
     end
 
+    if attributes.type then
+        -- If a type is provided, store it in the metatables.
+        inst_mt.type = attributes.type
+        class_mt.type = attributes.type
+    end
+
     if attributes.extends then
         -- Modify the __index metamethod of the class to look at the extended Class:
         class_mt.__index = function(this_class,key)
