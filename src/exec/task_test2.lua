@@ -31,7 +31,7 @@ d:queue('BTask',function ()
     print('B here. Received key ' .. keys.getName(key_code))
 
     return 0
-end,'BTask')
+end)
 
 print('Starting test.')
 d:run()
