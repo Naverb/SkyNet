@@ -1,4 +1,6 @@
 local gps3 = module.require('/lib/move/gps3.lua')
+local gps3_ctx = gps3.getGPSContext()
+local gps3_cfg = config.retrieve('gps')
 
 -- Standard Vectors
 local I = vector.new(1,0,0)
@@ -14,22 +16,49 @@ local K = vector.new(0,0,1)
 --      creating a parallel system where the robot checks auxiliary functions after
 --      moving a single block. That way, we can deal with event interrupts, etc..
 
-forward = function ()
-    --coroutine.yield('sufficient_fuel')
-    return turtle.forward()
+local valid_move_multipliers = {
+    forward = 1,
+    back = -1,
+    up = 1,
+    down = -1,
+    turnleft = 1,
+    turnRight = 1
+}
+function move(moveCommand)
+    -- Call turtle[moveCommand], updating context as necessary
+    assert(valid_move_multipliers[moveCommand], "One must call a valid move command for move.move")
+    local success = turtle[moveCommand]()
+    if success then -- update context
+        if moveCommand == 'turnRight' then
+            -- Rotate the orientation vector pi/2 radians in xz plane
+            local x_prime = -1 * gps3.getOrientation().z
+            local z_prime = gps3.getOrientation().x
+
+            gps3_ctx:set('orientation',{x_prime,0,z_prime})
+        elseif moveCommand == 'turnleft' then
+            -- Rotate the orientation vector -pi/2 radians in xz plane
+            local z_prime = -1 * gps3.getOrientation().x
+            local x_prime = gps3.getOrientation().z
+
+            gps3_ctx:set('orientation',{x_prime,0,z_prime})
+        else
+            if not gps3_cfg.LOCAL_MODE then
+                gps3.updateLocation()
+            else
+                if moveCommand == 'up' or moveCommand == 'down' then
+                    gps3_ctx:set('location', gps3.getLocation() + valid_move_multipliers[moveCommand] * J)
+                elseif moveCommand == 'forward' or moveCommand == 'back' then
+                    gps3_ctx:set('location', gps3.getLocaton() + valid_move_multipliers[moveCommand] * gps3.getOrientation())
+                else
+                    local ex = Exception:new('Extraneous move case executed!')
+                    ex:throw()
+                end
+            end
+        end
+    end
+
+    return success
 end
-
-up = function ()
-    --coroutine.yield('sufficient_fuel')
-    return turtle.up()
-end
-
-down = function ()
-    --coroutine.yield('sufficient_fuel')
-    return turtle.down()
-end
-
-
 
 ------------------------------------------------------
 ------------------ GOTO LOCATION ---------------------
@@ -49,10 +78,10 @@ local function traverseTrajectory(trajectory, breakBlocks)
     if (dx ~= 0) then
         gps3.orient(I:mul(sign_x), true)
         for i = 1,math.abs(dx) do
-            if not forward() then
+            if not move 'forward' then
                 if breakBlocks then
                     turtle.dig()
-                    forward()
+                    move 'forward'
                 end
             end
         end
@@ -62,10 +91,10 @@ local function traverseTrajectory(trajectory, breakBlocks)
     if (dz ~= 0) then
         gps3.orient(K:mul(sign_z), true)
         for i = 1,math.abs(dz) do
-            if not forward() then
+            if move 'forward' then
                 if breakBlocks then
                     turtle.dig()
-                    forward()
+                    move 'forward'
                 end
             end
         end
@@ -74,19 +103,19 @@ local function traverseTrajectory(trajectory, breakBlocks)
     -- Move in y
     if (sign_y) > 0 then
         for i = 1,math.abs(dy) do
-            if not up() then
+            if not move 'up' then
                 if breakBlocks then
                     turtle.digUp()
-                    up()
+                    move 'up'
                 end
             end
         end
     elseif (sign_y) < 0 then
         for i = 1,math.abs(dy) do
-            if not down() then
+            if not move 'down' then
                 if breakBlocks then
                     turtle.digDown()
-                    down()
+                    move 'down'
                 end
             end
         end

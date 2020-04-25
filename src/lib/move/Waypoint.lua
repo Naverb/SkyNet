@@ -27,7 +27,6 @@ Waypoint = Class {
     go = function(self, tolerance, breakBlocks)
         print('Going to waypoint ' .. self.name)
         print(self.location)
-        local prevLoc = gps.getLocation()
         move.goTo(self.location, breakBlocks, tolerance)
     end
 }
